@@ -39,20 +39,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        // Replace with DB-backed UserDetailsService in production
-        return new InMemoryUserDetailsManager(
-                User.withUsername("admin").password(encoder.encode("admin123")).roles("ADMIN").build(),
-                User.withUsername("client1").password(encoder.encode("client123")).roles("CLIENT").build()
-        );
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }

@@ -20,13 +20,13 @@ public class RateLimitService {
     private final RateLimitAlgorithmFactory algorithmFactory;
     private final RateLimitRuleRepository ruleRepository;
 
-    @Value("${rate-limiter.default-limit:100}")
+    @Value("${rate-limiter.default-limit}")
     private long defaultLimit;
 
-    @Value("${rate-limiter.default-window-seconds:60}")
+    @Value("${rate-limiter.default-window-seconds}")
     private long defaultWindowSeconds;
 
-    @Value("${rate-limiter.algorithm:SLIDING_WINDOW}")
+    @Value("${rate-limiter.algorithm}")
     private String defaultAlgorithm;
 
     public RateLimitResult checkRateLimit(String clientId, String route) {

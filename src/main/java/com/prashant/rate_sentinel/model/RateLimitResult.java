@@ -6,8 +6,6 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 public class RateLimitResult {
     private boolean allowed;
     private long remaining;

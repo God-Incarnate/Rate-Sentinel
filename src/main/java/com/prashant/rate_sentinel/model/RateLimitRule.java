@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "rate_limit_rules", indexes = {
-    @Index(name = "idx_client_route", columnList = "clientId, route")
-})
+@Table(name = "rate_limit_rules")
 @Data
 @Builder
 @NoArgsConstructor

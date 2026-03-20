@@ -1,6 +1,5 @@
 package com.prashant.rate_sentinel.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prashant.rate_sentinel.model.RateLimitResult;
 import com.prashant.rate_sentinel.service.RateLimitService;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -14,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import io.micrometer.core.instrument.Counter;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Map;
