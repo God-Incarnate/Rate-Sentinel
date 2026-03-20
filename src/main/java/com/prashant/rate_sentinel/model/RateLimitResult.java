@@ -1,10 +1,13 @@
 package com.prashant.rate_sentinel.model;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class RateLimitResult {
     private boolean allowed;
     private long remaining;
