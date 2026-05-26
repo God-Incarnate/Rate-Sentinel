@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as THREE from "three";
+import robotPeek from "./robot-peek.png";
+import robotStanding from "./robot-standing.png";
 
 /* ─── PALETTE & TOKENS ─────────────────────────────────────────────────────── */
 const C = {
@@ -345,7 +347,7 @@ function CountUp({ to }) {
 
 
 /* ─── LOGIN ──────────────────────────────────────────────────────────────────── */
-const ROBOT_URL = "https://pngimg.com/uploads/robot/robot_PNG64.png";
+const ROBOT_URL = robotStanding;
 
 function Login({ onLogin }) {
   const [u, setU] = useState("admin");
@@ -367,124 +369,297 @@ function Login({ onLogin }) {
   return (
     <div style={{
       minHeight: "100vh",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: "linear-gradient(135deg, #F0F4FF 0%, #F8FAFC 50%, #F0FDF9 100%)",
-      position: "relative", zIndex: 2,
+      display: "grid",
+      gridTemplateColumns: "1.1fr .9fr",
+      background: "#ffffff",
       overflow: "hidden",
+      position: "relative",
     }}>
-      {/* Subtle background grid */}
+
+      {/* LEFT VISUAL SIDE */}
       <div style={{
-        position: "absolute", inset: 0, zIndex: 0,
-        backgroundImage: `radial-gradient(circle, rgba(14,165,233,.06) 1px, transparent 1px)`,
-        backgroundSize: "40px 40px",
-      }} />
+        position: "relative",
+        background: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}>
 
-      {/* Glow orbs */}
-      <div style={{ position:"absolute", top:"10%", left:"5%", width:400, height:400, borderRadius:"50%", background:`radial-gradient(circle, ${C.accent1}12, transparent 70%)`, zIndex:0 }} />
-      <div style={{ position:"absolute", bottom:"10%", right:"5%", width:500, height:500, borderRadius:"50%", background:`radial-gradient(circle, ${C.accent2}0E, transparent 70%)`, zIndex:0 }} />
-
-      {/* Content row: robot left, card right */}
-      <div style={{ display:"flex", alignItems:"center", gap:0, position:"relative", zIndex:1 }} className="fade-up">
-
-        {/* Robot image */}
         <div style={{
-          flexShrink: 0,
-          width: 360,
-          display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
-          paddingRight: 0,
-          animation: "robotFloat 5s ease-in-out infinite",
-          filter: "drop-shadow(0 40px 60px rgba(14,165,233,.18)) drop-shadow(0 8px 24px rgba(99,102,241,.12))",
-        }}>
-          <img
-            src={ROBOT_URL}
-            alt="AI Robot"
-            style={{
-              width: "100%",
-              height: "auto",
-              maxHeight: 580,
-              objectFit: "contain",
-              imageRendering: "high-quality",
-            }}
-          />
-        </div>
-
-        {/* Divider line */}
-        <div style={{
-          width: 1, alignSelf: "stretch", margin: "60px 8px",
-          background: `linear-gradient(to bottom, transparent, ${C.accent1}44, ${C.accent2}44, transparent)`,
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `radial-gradient(circle, rgba(14,165,233,.08) 1px, transparent 1px)`,
+          backgroundSize: "38px 38px",
+          opacity: .8,
         }} />
 
-        {/* Login card */}
-        <div style={{ width: 440, padding: "0 0 0 24px" }}>
+        <div style={{
+          position: "absolute",
+          top: "-10%",
+          left: "-10%",
+          width: 420,
+          height: 420,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${C.accent1}18, transparent 70%)`,
+        }} />
 
-          {/* Logo area */}
-          <div style={{ marginBottom: 36 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: `linear-gradient(135deg, ${C.accent1}, ${C.accent2})`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 8px 24px ${C.accent1}44`,
-                animation: "float 4s ease-in-out infinite",
-              }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div>
-                <div className="glow-text" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.04em", color: C.text }}>
-                  rate<span style={{ color: C.accent1 }}>-sentinel</span>
-                </div>
-                <div style={{ color: C.muted, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }}>
-                  Command Interface v1.0
-                </div>
-              </div>
+        <div style={{
+          position: "absolute",
+          bottom: "-10%",
+          right: "-10%",
+          width: 460,
+          height: 460,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${C.accent2}14, transparent 70%)`,
+        }} />
+
+        <div style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "60px",
+        }}>
+
+          <div style={{
+            position: "absolute",
+            left: "8%",
+            top: "7%",
+            zIndex: 6,
+            maxWidth: 520,
+          }}>
+            <div style={{
+              fontSize: 64,
+              fontWeight: 900,
+              color: C.text,
+              lineHeight: .95,
+              letterSpacing: "-.08em",
+            }}>
+              rate<span style={{ color: C.accent1 }}>-sentinel</span>
             </div>
-            <div style={{ color: C.text, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Welcome back</div>
-            <div style={{ color: C.muted, fontSize: 13 }}>Sign in to your command centre</div>
+
+            <div style={{
+              marginTop: 20,
+              color: C.muted,
+              fontSize: 16,
+              maxWidth: 460,
+              lineHeight: 1.8,
+            }}>
+              Intelligent payment protection platform with AI-powered rate limiting,
+              OTP orchestration and enterprise-grade transaction monitoring.
+            </div>
           </div>
 
-          {/* Card */}
           <div style={{
-            background: "#FFFFFF",
-            border: `1px solid ${C.border}`,
-            borderRadius: 20,
-            padding: 28,
-            boxShadow: "0 4px 6px rgba(15,23,42,.04), 0 24px 64px rgba(15,23,42,.08)",
+            position: "absolute",
+            left: "-120px",
+            top: "48%",
+            transform: "translateY(-50%)",
+            zIndex: 5,
+          }}>
+            <div style={{
+              background: "#FFFFFF",
+              borderRadius: "0 34px 34px 0",
+              padding: "20px 20px 20px 0",
+              boxShadow: "30px 0 80px rgba(15,23,42,.12)",
+            }}>
+              <img
+                src={robotPeek}
+                alt="robot peek"
+                style={{
+                  width: "46vw",
+                  maxWidth: 650,
+                  display: "block",
+                  filter: "drop-shadow(0 30px 60px rgba(14,165,233,.22))",
+                  animation: "robotFloat 5s ease-in-out infinite",
+                }}
+              />
+            </div>
+          </div>
+
+          <img
+            src={ROBOT_URL}
+            alt="robot standing"
+            style={{
+              position: "absolute",
+              right: "4%",
+              bottom: "2%",
+              width: "30vw",
+              maxWidth: 430,
+              zIndex: 4,
+              filter: "drop-shadow(0 30px 50px rgba(99,102,241,.18))",
+              animation: "float 6s ease-in-out infinite",
+            }}
+          />
+
+          <div style={{
+            position: "absolute",
+            left: "8%",
+            bottom: "8%",
+            zIndex: 4,
+            opacity: 0,
+          }}>
+<div />
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT LOGIN SIDE */}
+      <div style={{
+        position: "relative",
+        background: `linear-gradient(145deg, ${C.accent2} 0%, ${C.accent1} 100%)`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "48px",
+        overflow: "hidden",
+      }}>
+
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(circle at top right, rgba(255,255,255,.18), transparent 35%)",
+        }} />
+
+        <div style={{
+          position: "absolute",
+          width: 520,
+          height: 520,
+          borderRadius: "50%",
+          background: "rgba(255,255,255,.08)",
+          top: "-15%",
+          right: "-10%",
+          filter: "blur(20px)",
+        }} />
+
+        <div className="fade-up" style={{
+          width: "100%",
+          maxWidth: 460,
+          position: "relative",
+          zIndex: 2,
+        }}>
+
+          <div style={{ marginBottom: 28 }}>
+            <div style={{
+              color: "#ffffff",
+              fontSize: 42,
+              fontWeight: 800,
+              letterSpacing: "-.05em",
+              marginBottom: 10,
+            }}>
+              Welcome Back
+            </div>
+
+            <div style={{
+              color: "rgba(255,255,255,.75)",
+              fontSize: 14,
+              letterSpacing: ".04em",
+            }}>
+              Access your intelligent command centre
+            </div>
+          </div>
+
+          <div style={{
+            background: "rgba(255,255,255,.14)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,.18)",
+            borderRadius: 28,
+            padding: 34,
+            boxShadow: "0 30px 80px rgba(0,0,0,.18)",
           }}>
             <form onSubmit={submit}>
               <Field label="Identity">
                 <input value={u} onChange={e => setU(e.target.value)} placeholder="username" autoComplete="username" />
               </Field>
+
               <Field label="Access Key">
                 <input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
               </Field>
+
               {err && (
-                <div style={{ color: C.danger, fontSize: 12, marginBottom: 14, fontFamily: "'JetBrains Mono',monospace", padding: "10px 14px", background: "#FEF2F2", borderRadius: 8, border: `1px solid #FECACA` }}>
+                <div style={{
+                  color: "#fff",
+                  fontSize: 12,
+                  marginBottom: 14,
+                  padding: "10px 14px",
+                  background: "rgba(239,68,68,.25)",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,.16)",
+                }}>
                   ⚠ {err}
                 </div>
               )}
-              <Btn onClick={submit} variant="glow" disabled={loading} style={{
-                width: "100%", padding: "13px", fontSize: 13,
-                background: `linear-gradient(135deg, ${C.accent1}, ${C.accent2})`,
-                boxShadow: `0 4px 16px ${C.accent1}44`,
-              }}>
-                {loading ? <Spinner /> : "AUTHENTICATE →"}
+
+              <Btn
+                onClick={submit}
+                variant="glow"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  fontSize: 13,
+                  background: "#ffffff",
+                  color: C.accent2,
+                  fontWeight: 800,
+                  border: "none",
+                  boxShadow: "0 12px 30px rgba(255,255,255,.24)",
+                }}
+              >
+                {loading ? <Spinner /> : "LOGIN →"}
               </Btn>
             </form>
 
-            <div style={{ display:"flex", alignItems:"center", gap:10, margin:"20px 0 16px" }}>
-              <div style={{ flex:1, height:1, background: C.border }} />
-              <span style={{ color:"#94A3B8", fontSize:10, letterSpacing:".1em" }}>ACCESS PROFILES</span>
-              <div style={{ flex:1, height:1, background: C.border }} />
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              margin: "24px 0 16px",
+            }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.18)" }} />
+              <span style={{ color: "rgba(255,255,255,.6)", fontSize: 10, letterSpacing: ".12em" }}>
+                QUICK ACCESS
+              </span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.18)" }} />
             </div>
 
-            <div style={{ padding:"12px 14px", background:"#F8FAFC", borderRadius:10, border:`1px solid ${C.border}` }}>
-              {[["admin","admin123","ADMIN",C.danger],["client1","client123","CLIENT",C.accent3]].map(([u,p,role,c]) => (
-                <div key={u} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                  <span style={{ color:C.text, fontSize:12, fontFamily:"'JetBrains Mono',monospace" }}>{u} / {p}</span>
-                  <Chip v={role} />
+            <div style={{
+              background: "rgba(255,255,255,.08)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 14,
+              padding: "14px 16px",
+            }}>
+              {[["admin","admin123","ADMIN"],["client1","client123","CLIENT"]].map(([user,pass,role]) => (
+                <div
+                  key={user}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <span style={{
+                    color: "#ffffff",
+                    fontSize: 12,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    {user} / {pass}
+                  </span>
+
+                  <div style={{
+                    background: "rgba(255,255,255,.16)",
+                    borderRadius: 999,
+                    padding: "4px 10px",
+                    fontSize: 10,
+                    color: "#ffffff",
+                    letterSpacing: ".08em",
+                  }}>
+                    {role}
+                  </div>
                 </div>
               ))}
             </div>
