@@ -3,17 +3,17 @@ import * as THREE from "three";
 
 /* ─── PALETTE & TOKENS ─────────────────────────────────────────────────────── */
 const C = {
-  bg:       "#03070F",
-  panel:    "rgba(6,14,30,0.75)",
-  border:   "rgba(56,189,248,0.12)",
-  accent1:  "#38BDF8",   // sky blue
-  accent2:  "#818CF8",   // indigo
-  accent3:  "#34D399",   // emerald
-  warn:     "#FBBF24",
-  danger:   "#F87171",
-  text:     "#E2E8F0",
-  muted:    "#475569",
-  dimmed:   "#1E293B",
+  bg:       "#F8FAFC",
+  panel:    "rgba(255,255,255,0.92)",
+  border:   "rgba(15,23,42,0.08)",
+  accent1:  "#0EA5E9",   // sky blue
+  accent2:  "#6366F1",   // indigo
+  accent3:  "#10B981",   // emerald
+  warn:     "#F59E0B",
+  danger:   "#EF4444",
+  text:     "#0F172A",
+  muted:    "#64748B",
+  dimmed:   "#E2E8F0",
 };
 
 /* ─── GLOBAL STYLES ────────────────────────────────────────────────────────── */
@@ -22,12 +22,12 @@ const GLOBAL_CSS = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: ${C.bg}; color: ${C.text}; font-family: 'Syne', sans-serif; overflow-x: hidden; }
   ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: ${C.dimmed}; border-radius: 2px; }
+  ::-webkit-scrollbar-track { background: ${C.dimmed}; }
+  ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
   ::selection { background: ${C.accent1}33; }
   input, select, textarea {
     font-family: 'JetBrains Mono', monospace;
-    background: rgba(3,7,15,0.8);
+    background: #FFFFFF;
     border: 1px solid ${C.border};
     color: ${C.text};
     border-radius: 8px;
@@ -39,17 +39,17 @@ const GLOBAL_CSS = `
   }
   input:focus, select:focus {
     border-color: ${C.accent1}88;
-    box-shadow: 0 0 0 3px ${C.accent1}11;
+    box-shadow: 0 0 0 3px ${C.accent1}18;
   }
-  input::placeholder { color: ${C.muted}; }
-  select option { background: #0B1627; }
+  input::placeholder { color: #94A3B8; }
+  select option { background: #fff; color: ${C.text}; }
   @keyframes spin    { to { transform: rotate(360deg); } }
   @keyframes fadeUp  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
   @keyframes pulse   { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
-  @keyframes scanline{ 0%{ transform:translateY(-100%); } 100%{ transform:translateY(100vh); } }
-  @keyframes glow    { 0%,100%{ text-shadow:0 0 8px ${C.accent1}80; } 50%{ text-shadow:0 0 24px ${C.accent1}, 0 0 48px ${C.accent1}40; } }
-  @keyframes borderPulse { 0%,100%{ border-color:${C.accent1}22; } 50%{ border-color:${C.accent1}55; } }
+  @keyframes glow    { 0%,100%{ text-shadow:0 0 8px ${C.accent1}40; } 50%{ text-shadow:0 0 20px ${C.accent1}66, 0 0 40px ${C.accent1}22; } }
+  @keyframes borderPulse { 0%,100%{ border-color:${C.accent1}18; } 50%{ border-color:${C.accent1}44; } }
   @keyframes float   { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+  @keyframes robotFloat { 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-10px) scale(1.005); } }
   .fade-up  { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
   .glow-text{ animation: glow 3s ease-in-out infinite; }
 `;
@@ -225,12 +225,13 @@ function Chip({ v }) {
 function GlassCard({ children, style = {}, delay = 0 }) {
   return (
     <div className="fade-up" style={{
-      background: C.panel,
+      background: "#FFFFFF",
       border: `1px solid ${C.border}`,
       borderRadius: 16,
       backdropFilter: "blur(24px)",
       WebkitBackdropFilter: "blur(24px)",
       padding: 24,
+      boxShadow: "0 1px 3px rgba(15,23,42,.06), 0 4px 24px rgba(15,23,42,.04)",
       animation: `fadeUp .5s ${delay}s cubic-bezier(.16,1,.3,1) both, borderPulse 4s ${delay}s ease-in-out infinite`,
       ...style,
     }}>{children}</div>
@@ -342,360 +343,153 @@ function CountUp({ to }) {
   return <>{val}</>;
 }
 
-/* ─── MINION ─────────────────────────────────────────────────────────────────── */
-// mood: "idle" | "watching" | "peek" | "shy" | "happy" | "sad" | "shocked"
-function Minion({ mood = "idle", eyeTarget = { x: 0, y: 0 } }) {
-  // Pupil offset clamped to goggles bounds
-  const maxPupil = 7;
-  const px = Math.max(-maxPupil, Math.min(maxPupil, eyeTarget.x * maxPupil));
-  const py = Math.max(-maxPupil, Math.min(maxPupil, eyeTarget.y * maxPupil));
-
-  // Mouth shapes per mood
-  const mouths = {
-    idle:    <path d="M54 108 Q68 116 82 108" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/>,
-    watching:<path d="M52 110 Q68 118 84 110" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/>,
-    peek:    <path d="M56 112 Q68 108 80 112" stroke="#5C3317" strokeWidth="2" fill="none" strokeLinecap="round"/>,
-    shy:     <path d="M56 112 Q68 108 80 112" stroke="#5C3317" strokeWidth="2" fill="none" strokeLinecap="round"/>,
-    happy:   <>
-               <path d="M50 106 Q68 124 86 106" stroke="#5C3317" strokeWidth="2.5" fill="#FF9090" strokeLinecap="round"/>
-               <path d="M56 108 Q68 120 80 108" fill="#FF9090"/>
-             </>,
-    sad:     <path d="M54 116 Q68 106 82 116" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/>,
-    shocked: <>
-               <ellipse cx="68" cy="112" rx="10" ry="12" fill="#FF9090" stroke="#5C3317" strokeWidth="2"/>
-             </>,
-  };
-
-  // Eye expressions
-  const isHappy   = mood === "happy";
-  const isSad     = mood === "sad";
-  const isShocked = mood === "shocked";
-  const isShy     = mood === "shy";
-  const isPeek    = mood === "peek";
-
-  // Eyebrows
-  const eyebrows = {
-    idle:    <><line x1="48" y1="55" x2="62" y2="53" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/>
-               <line x1="74" y1="53" x2="88" y2="55" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/></>,
-    watching:<><line x1="46" y1="53" x2="62" y2="51" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/>
-               <line x1="74" y1="51" x2="90" y2="53" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/></>,
-    happy:   <><path d="M46 53 Q55 46 64 51" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-               <path d="M72 51 Q81 46 90 53" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>,
-    sad:     <><path d="M46 51 Q55 57 64 53" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-               <path d="M72 53 Q81 57 90 51" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>,
-    shocked: <><line x1="46" y1="48" x2="63" y2="52" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/>
-               <line x1="73" y1="52" x2="90" y2="48" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/></>,
-    peek:    <><line x1="48" y1="57" x2="62" y2="55" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/>
-               <line x1="74" y1="55" x2="88" y2="57" stroke="#5C3317" strokeWidth="2.5" strokeLinecap="round"/></>,
-    shy:     <><path d="M46 55 Q55 50 64 53" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-               <path d="M72 53 Q81 50 90 55" stroke="#5C3317" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>,
-  };
-
-  const blushOpacity = (isHappy || isShy) ? 0.6 : 0;
-
-  return (
-    <svg
-      viewBox="0 0 136 180"
-      width="136" height="180"
-      style={{ filter: "drop-shadow(0 8px 32px rgba(0,0,0,.5))", overflow: "visible" }}
-    >
-      {/* ── Body ── */}
-      <ellipse cx="68" cy="148" rx="32" ry="28" fill="#F5C518"/>
-      {/* legs */}
-      <rect x="50" y="168" width="14" height="14" rx="5" fill="#5C3317"/>
-      <rect x="72" y="168" width="14" height="14" rx="5" fill="#5C3317"/>
-      {/* Overalls */}
-      <path d="M36 140 Q36 125 68 125 Q100 125 100 140 L100 176 Q100 178 98 178 L38 178 Q36 178 36 176 Z" fill="#4A90D9"/>
-      {/* Buckles */}
-      <rect x="56" y="126" width="8" height="10" rx="2" fill="#DAA520"/>
-      <rect x="72" y="126" width="8" height="10" rx="2" fill="#DAA520"/>
-
-      {/* ── Head ── */}
-      <ellipse cx="68" cy="80" rx="40" ry="44" fill="#F5C518"/>
-
-      {/* ── Goggles strap ── */}
-      <rect x="28" y="60" width="80" height="18" rx="9" fill="#333" opacity=".9"/>
-
-      {/* ── Goggles ── */}
-      {/* Left goggle */}
-      <circle cx="55" cy="69" r="16" fill="#222" stroke="#AAA" strokeWidth="2.5"/>
-      <circle cx="55" cy="69" r="13" fill="#87CEEB" opacity=".25"/>
-      {/* Right goggle */}
-      <circle cx="81" cy="69" r="16" fill="#222" stroke="#AAA" strokeWidth="2.5"/>
-      <circle cx="81" cy="69" r="13" fill="#87CEEB" opacity=".25"/>
-      {/* goggle bridge */}
-      <rect x="68" y="66" width="0" height="0"/>
-      <line x1="69" y1="69" x2="67" y2="69" stroke="#AAA" strokeWidth="3"/>
-
-      {/* ── Eyes ── */}
-      {isShy ? (
-        /* Shy: cover eyes with hands */
-        <>
-          <rect x="36" y="58" width="28" height="20" rx="6" fill="#F5C518" stroke="#DAA520" strokeWidth="1.5"/>
-          <rect x="72" y="58" width="28" height="20" rx="6" fill="#F5C518" stroke="#DAA520" strokeWidth="1.5"/>
-          {/* fingers */}
-          {[40,46,52,58].map(x => <rect key={x} x={x} y="53" width="5" height="10" rx="2.5" fill="#F5C518" stroke="#DAA520" strokeWidth="1"/>)}
-          {[76,82,88,94].map(x => <rect key={x} x={x} y="53" width="5" height="10" rx="2.5" fill="#F5C518" stroke="#DAA520" strokeWidth="1"/>)}
-        </>
-      ) : isPeek ? (
-        /* Peek: one hand partially covering */
-        <>
-          {/* Left eye normal */}
-          <circle cx="55" cy="69" r="9" fill="white"/>
-          <circle cx={55 + px} cy={69 + py} r="5.5" fill="#1a1a1a"/>
-          <circle cx={55 + px + 2} cy={69 + py - 2} r="1.5" fill="white"/>
-          {/* Right eye: hand covering most */}
-          <rect x="66" y="56" width="28" height="20" rx="6" fill="#F5C518" stroke="#DAA520" strokeWidth="1.5"/>
-          {[70,76,82,88].map(x => <rect key={x} x={x} y="51" width="5" height="10" rx="2.5" fill="#F5C518" stroke="#DAA520" strokeWidth="1"/>)}
-          {/* peeking sliver */}
-          <clipPath id="peekClip">
-            <rect x="66" y="74" width="30" height="10"/>
-          </clipPath>
-          <circle cx="81" cy="69" r="9" fill="white" clipPath="url(#peekClip)"/>
-        </>
-      ) : isHappy ? (
-        /* Happy: crescent eyes */
-        <>
-          <path d="M46 65 Q55 74 64 65" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>
-          <path d="M72 65 Q81 74 90 65" stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>
-        </>
-      ) : isSad ? (
-        /* Sad: droopy eyes */
-        <>
-          <circle cx="55" cy="71" r="9" fill="white"/>
-          <circle cx={55 + px * .3} cy={71 + 2} r="5.5" fill="#1a1a1a"/>
-          <circle cx="81" cy="71" r="9" fill="white"/>
-          <circle cx={81 + px * .3} cy={71 + 2} r="5.5" fill="#1a1a1a"/>
-          {/* tear drops */}
-          <ellipse cx="52" cy="82" rx="2" ry="3" fill="#87CEEB" opacity=".8"/>
-          <ellipse cx="78" cy="82" rx="2" ry="3" fill="#87CEEB" opacity=".8"/>
-        </>
-      ) : isShocked ? (
-        /* Shocked: wide eyes */
-        <>
-          <circle cx="55" cy="69" r="11" fill="white"/>
-          <circle cx="55" cy="69" r="7" fill="#1a1a1a"/>
-          <circle cx="57" cy="67" r="2" fill="white"/>
-          <circle cx="81" cy="69" r="11" fill="white"/>
-          <circle cx="81" cy="69" r="7" fill="#1a1a1a"/>
-          <circle cx="83" cy="67" r="2" fill="white"/>
-        </>
-      ) : (
-        /* Normal tracking eyes */
-        <>
-          <circle cx="55" cy="69" r="9" fill="white"/>
-          <circle cx={55 + px} cy={69 + py} r="5.5" fill="#1a1a1a"/>
-          <circle cx={55 + px + 2} cy={69 + py - 2} r="1.5" fill="white"/>
-          <circle cx="81" cy="69" r="9" fill="white"/>
-          <circle cx={81 + px} cy={69 + py} r="5.5" fill="#1a1a1a"/>
-          <circle cx={81 + px + 2} cy={69 + py - 2} r="1.5" fill="white"/>
-        </>
-      )}
-
-      {/* ── Eyebrows ── */}
-      {eyebrows[mood] || eyebrows.idle}
-
-      {/* ── Blush ── */}
-      <ellipse cx="42" cy="90" rx="9" ry="6" fill="#FF9090" opacity={blushOpacity}/>
-      <ellipse cx="94" cy="90" rx="9" ry="6" fill="#FF9090" opacity={blushOpacity}/>
-
-      {/* ── Mouth ── */}
-      {mouths[mood] || mouths.idle}
-
-      {/* ── Hair spike ── */}
-      <path d="M58 36 L62 20 L66 36" fill="#5C3317"/>
-      <path d="M66 34 L70 16 L74 34" fill="#5C3317"/>
-      <path d="M74 36 L78 22 L82 36" fill="#5C3317"/>
-
-      {/* ── Arms ── */}
-      <ellipse cx="28" cy="138" rx="10" ry="7" fill="#F5C518" transform="rotate(-20,28,138)"/>
-      <ellipse cx="108" cy="138" rx="10" ry="7" fill="#F5C518" transform="rotate(20,108,138)"/>
-
-      {/* ── Speech bubble (happy/sad only) ── */}
-      {isHappy && (
-        <g>
-          <rect x="96" y="20" width="52" height="28" rx="10" fill="white" opacity=".92"/>
-          <polygon points="96,40 86,48 100,44" fill="white" opacity=".92"/>
-          <text x="122" y="39" textAnchor="middle" fontSize="13" fill="#333">🎉 YAY!</text>
-        </g>
-      )}
-      {isSad && (
-        <g>
-          <rect x="96" y="20" width="52" height="28" rx="10" fill="white" opacity=".92"/>
-          <polygon points="96,40 86,48 100,44" fill="white" opacity=".92"/>
-          <text x="122" y="39" textAnchor="middle" fontSize="12" fill="#333">😢 Nope</text>
-        </g>
-      )}
-      {isShocked && (
-        <g>
-          <rect x="94" y="14" width="52" height="28" rx="10" fill="white" opacity=".92"/>
-          <polygon points="94,34 84,44 98,38" fill="white" opacity=".92"/>
-          <text x="120" y="33" textAnchor="middle" fontSize="12" fill="#333">⚡ Bello?!</text>
-        </g>
-      )}
-    </svg>
-  );
-}
 
 /* ─── LOGIN ──────────────────────────────────────────────────────────────────── */
+const ROBOT_URL = "https://pngimg.com/uploads/robot/robot_PNG64.png";
+
 function Login({ onLogin }) {
   const [u, setU] = useState("admin");
   const [p, setP] = useState("admin123");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mood, setMood] = useState("idle");
-  const [eyeTarget, setEyeTarget] = useState({ x: 0, y: 0 });
-  const [focusedField, setFocusedField] = useState(null); // "user"|"pass"|null
-  const cardRef = useRef(null);
-  const moodTimer = useRef(null);
-
-  // Mouse tracking — calculate angle relative to minion position
-  useEffect(() => {
-    const onMove = e => {
-      if (focusedField === "pass") return; // shy when typing password
-      const card = cardRef.current;
-      if (!card) return;
-      const rect = card.getBoundingClientRect();
-      // Minion sits to the right of the card
-      const minionX = rect.right + 68;
-      const minionY = rect.top + rect.height / 2 - 20;
-      const dx = (e.clientX - minionX) / window.innerWidth;
-      const dy = (e.clientY - minionY) / window.innerHeight;
-      setEyeTarget({ x: Math.max(-1, Math.min(1, dx * 3)), y: Math.max(-1, Math.min(1, dy * 3)) });
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, [focusedField]);
-
-  // Mood based on what's happening
-  useEffect(() => {
-    if (loading) { setMood("shocked"); return; }
-    if (focusedField === "pass") { setMood(p.length > 0 ? "shy" : "peek"); return; }
-    if (focusedField === "user") { setMood("watching"); return; }
-    setMood("idle");
-  }, [focusedField, loading, p]);
 
   async function submit(e) {
     e?.preventDefault();
     setLoading(true); setErr("");
-    setMood("shocked");
     try {
       const data = await api.post("/api/auth/login", { username: u, password: p });
-      setMood("happy");
-      moodTimer.current = setTimeout(() => onLogin(data.token, data.username), 1200);
+      onLogin(data.token, data.username);
     } catch (ex) {
       setErr(ex.message);
-      setMood("sad");
-      moodTimer.current = setTimeout(() => setMood("idle"), 2500);
     } finally { setLoading(false); }
   }
 
-  useEffect(() => () => clearTimeout(moodTimer.current), []);
-
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2 }}>
-      {/* Outer wrapper: card + minion side by side */}
-      <div style={{ display: "flex", alignItems: "center", gap: 32 }} className="fade-up">
+    <div style={{
+      minHeight: "100vh",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "linear-gradient(135deg, #F0F4FF 0%, #F8FAFC 50%, #F0FDF9 100%)",
+      position: "relative", zIndex: 2,
+      overflow: "hidden",
+    }}>
+      {/* Subtle background grid */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 0,
+        backgroundImage: `radial-gradient(circle, rgba(14,165,233,.06) 1px, transparent 1px)`,
+        backgroundSize: "40px 40px",
+      }} />
 
-        <div style={{ width: 420 }} ref={cardRef}>
-          {/* Logo */}
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 72, height: 72, borderRadius: 20,
-              background: `linear-gradient(135deg, ${C.accent1}33, ${C.accent2}33)`,
-              border: `1px solid ${C.accent1}44`,
-              marginBottom: 20,
-              boxShadow: `0 0 60px ${C.accent1}33, inset 0 1px 0 ${C.accent1}22`,
-              animation: "float 4s ease-in-out infinite",
-            }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.accent1} strokeWidth="1.5">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+      {/* Glow orbs */}
+      <div style={{ position:"absolute", top:"10%", left:"5%", width:400, height:400, borderRadius:"50%", background:`radial-gradient(circle, ${C.accent1}12, transparent 70%)`, zIndex:0 }} />
+      <div style={{ position:"absolute", bottom:"10%", right:"5%", width:500, height:500, borderRadius:"50%", background:`radial-gradient(circle, ${C.accent2}0E, transparent 70%)`, zIndex:0 }} />
+
+      {/* Content row: robot left, card right */}
+      <div style={{ display:"flex", alignItems:"center", gap:0, position:"relative", zIndex:1 }} className="fade-up">
+
+        {/* Robot image */}
+        <div style={{
+          flexShrink: 0,
+          width: 360,
+          display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
+          paddingRight: 0,
+          animation: "robotFloat 5s ease-in-out infinite",
+          filter: "drop-shadow(0 40px 60px rgba(14,165,233,.18)) drop-shadow(0 8px 24px rgba(99,102,241,.12))",
+        }}>
+          <img
+            src={ROBOT_URL}
+            alt="AI Robot"
+            style={{
+              width: "100%",
+              height: "auto",
+              maxHeight: 580,
+              objectFit: "contain",
+              imageRendering: "high-quality",
+            }}
+          />
+        </div>
+
+        {/* Divider line */}
+        <div style={{
+          width: 1, alignSelf: "stretch", margin: "60px 8px",
+          background: `linear-gradient(to bottom, transparent, ${C.accent1}44, ${C.accent2}44, transparent)`,
+        }} />
+
+        {/* Login card */}
+        <div style={{ width: 440, padding: "0 0 0 24px" }}>
+
+          {/* Logo area */}
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 16,
+                background: `linear-gradient(135deg, ${C.accent1}, ${C.accent2})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: `0 8px 24px ${C.accent1}44`,
+                animation: "float 4s ease-in-out infinite",
+              }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div className="glow-text" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.04em", color: C.text }}>
+                  rate<span style={{ color: C.accent1 }}>-sentinel</span>
+                </div>
+                <div style={{ color: C.muted, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }}>
+                  Command Interface v1.0
+                </div>
+              </div>
             </div>
-            <div className="glow-text" style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-.04em", color: C.text }}>
-              rate<span style={{ color: C.accent1 }}>-sentinel</span>
-            </div>
-            <div style={{ color: C.muted, fontSize: 12, marginTop: 6, letterSpacing: ".1em", textTransform: "uppercase" }}>
-              Command Interface v1.0
-            </div>
+            <div style={{ color: C.text, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Welcome back</div>
+            <div style={{ color: C.muted, fontSize: 13 }}>Sign in to your command centre</div>
           </div>
 
-          <GlassCard>
+          {/* Card */}
+          <div style={{
+            background: "#FFFFFF",
+            border: `1px solid ${C.border}`,
+            borderRadius: 20,
+            padding: 28,
+            boxShadow: "0 4px 6px rgba(15,23,42,.04), 0 24px 64px rgba(15,23,42,.08)",
+          }}>
             <form onSubmit={submit}>
               <Field label="Identity">
-                <input
-                  value={u}
-                  onChange={e => setU(e.target.value)}
-                  placeholder="username"
-                  autoComplete="username"
-                  onFocus={() => setFocusedField("user")}
-                  onBlur={() => setFocusedField(null)}
-                />
+                <input value={u} onChange={e => setU(e.target.value)} placeholder="username" autoComplete="username" />
               </Field>
               <Field label="Access Key">
-                <input
-                  type="password"
-                  value={p}
-                  onChange={e => setP(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  onFocus={() => setFocusedField("pass")}
-                  onBlur={() => setFocusedField(null)}
-                />
+                <input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
               </Field>
               {err && (
-                <div style={{ color: C.danger, fontSize: 12, marginBottom: 14, fontFamily: "'JetBrains Mono',monospace", padding: "8px 12px", background: C.danger + "11", borderRadius: 6, border: `1px solid ${C.danger}33` }}>
+                <div style={{ color: C.danger, fontSize: 12, marginBottom: 14, fontFamily: "'JetBrains Mono',monospace", padding: "10px 14px", background: "#FEF2F2", borderRadius: 8, border: `1px solid #FECACA` }}>
                   ⚠ {err}
                 </div>
               )}
-              <Btn onClick={submit} variant="glow" disabled={loading} style={{ width: "100%", padding: "13px", fontSize: 13 }}>
+              <Btn onClick={submit} variant="glow" disabled={loading} style={{
+                width: "100%", padding: "13px", fontSize: 13,
+                background: `linear-gradient(135deg, ${C.accent1}, ${C.accent2})`,
+                boxShadow: `0 4px 16px ${C.accent1}44`,
+              }}>
                 {loading ? <Spinner /> : "AUTHENTICATE →"}
               </Btn>
             </form>
 
-            {/* Credentials hint */}
-            <div style={{ marginTop: 20, padding: 14, background: "rgba(56,189,248,.04)", borderRadius: 10, border: `1px solid ${C.border}` }}>
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>Access Profiles</div>
-              {[["admin", "admin123", "ADMIN", C.danger], ["client1", "client123", "CLIENT", C.accent3]].map(([u, p, role, c]) => (
-                <div key={u} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ color: C.text, fontSize: 12, fontFamily: "'JetBrains Mono',monospace" }}>{u} / {p}</span>
+            <div style={{ display:"flex", alignItems:"center", gap:10, margin:"20px 0 16px" }}>
+              <div style={{ flex:1, height:1, background: C.border }} />
+              <span style={{ color:"#94A3B8", fontSize:10, letterSpacing:".1em" }}>ACCESS PROFILES</span>
+              <div style={{ flex:1, height:1, background: C.border }} />
+            </div>
+
+            <div style={{ padding:"12px 14px", background:"#F8FAFC", borderRadius:10, border:`1px solid ${C.border}` }}>
+              {[["admin","admin123","ADMIN",C.danger],["client1","client123","CLIENT",C.accent3]].map(([u,p,role,c]) => (
+                <div key={u} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                  <span style={{ color:C.text, fontSize:12, fontFamily:"'JetBrains Mono',monospace" }}>{u} / {p}</span>
                   <Chip v={role} />
                 </div>
               ))}
             </div>
-          </GlassCard>
-        </div>
-
-        {/* Minion — sits to the right, animates on mood */}
-        <div style={{
-          flexShrink: 0,
-          transition: "transform .4s cubic-bezier(.34,1.56,.64,1)",
-          transform: mood === "happy"   ? "translateY(-12px) rotate(3deg)" :
-                     mood === "sad"     ? "translateY(6px) rotate(-3deg)" :
-                     mood === "shocked" ? "translateY(-6px) scale(1.06)" :
-                     mood === "shy"     ? "rotate(-5deg)" : "none",
-        }}>
-          <Minion mood={mood} eyeTarget={eyeTarget} />
-          {/* mood label */}
-          <div style={{
-            textAlign: "center", marginTop: 8,
-            color: mood === "happy" ? C.accent3 : mood === "sad" ? C.danger : mood === "shy" ? C.warn : C.muted,
-            fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase",
-            fontFamily: "'JetBrains Mono', monospace",
-            transition: "color .3s",
-          }}>
-            {mood === "idle"     && "observing..."}
-            {mood === "watching" && "👀 watching"}
-            {mood === "shy"      && "🙈 not looking!"}
-            {mood === "peek"     && "👁 peeking..."}
-            {mood === "shocked"  && "⚡ processing..."}
-            {mood === "happy"    && "🎉 access granted!"}
-            {mood === "sad"      && "😢 access denied"}
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -713,8 +507,8 @@ function Sidebar({ active, setActive, username, onLogout }) {
   return (
     <div style={{
       width: 240, position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 10,
-      background: "rgba(3,7,15,.85)", borderRight: `1px solid ${C.border}`,
-      backdropFilter: "blur(32px)",
+      background: "#FFFFFF", borderRight: `1px solid ${C.border}`,
+      boxShadow: "4px 0 24px rgba(15,23,42,.06)",
       display: "flex", flexDirection: "column",
     }}>
       {/* Brand */}
@@ -756,7 +550,7 @@ function Sidebar({ active, setActive, username, onLogout }) {
               transition: "all .2s",
               position: "relative", overflow: "hidden",
             }}
-            onMouseEnter={e => !isActive && (e.currentTarget.style.background = C.dimmed + "88")}
+            onMouseEnter={e => !isActive && (e.currentTarget.style.background = C.dimmed)}
             onMouseLeave={e => !isActive && (e.currentTarget.style.background = "transparent")}
             >
               {isActive && (
@@ -836,7 +630,7 @@ function Overview({ token }) {
               <div key={path} style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "9px 14px", borderRadius: 8,
-                background: "rgba(3,7,15,.5)", border: `1px solid ${C.border}`,
+                background: C.dimmed, border: `1px solid ${C.border}`,
                 transition: "background .15s",
               }}>
                 <span style={{
@@ -935,11 +729,11 @@ function RulesTab({ token }) {
 
       {/* Modal */}
       {modal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(3,7,15,.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(8px)" }}>
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,.4)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(8px)" }}>
           <div className="fade-up" style={{
-            background:"rgba(6,14,30,.95)", border:`1px solid ${C.accent2}44`,
+            background:"#FFFFFF", border:`1px solid ${C.border}`,
             borderRadius:18, padding:32, width:480,
-            boxShadow:`0 32px 80px rgba(0,0,0,.6), 0 0 40px ${C.accent2}22`,
+            boxShadow:`0 32px 80px rgba(15,23,42,.18), 0 0 0 1px rgba(99,102,241,.08)`,
           }}>
             <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:24 }}>
               {modal === "new" ? "⊕ Create Rule" : `✎ Edit Rule #${modal.id}`}
@@ -1207,7 +1001,7 @@ function PaymentsTab({ token }) {
             Session History <span style={{ color:C.warn }}>({history.length})</span>
           </div>
           {history.length === 0 ? (
-            <div style={{ textAlign:"center", color:C.dimmed, padding:"40px 0", fontSize:13 }}>No transactions this session</div>
+            <div style={{ textAlign:"center", color:C.muted, padding:"40px 0", fontSize:13 }}>No transactions this session</div>
           ) : history.map((p, i) => (
             <div key={i} style={{
               display:"flex", justifyContent:"space-between", alignItems:"center",
@@ -1246,17 +1040,13 @@ export default function App() {
   return (
     <>
       <style>{GLOBAL_CSS}</style>
-      <ParticleField />
-      <Scanline />
 
       {!token ? (
-        <div style={{ position:"relative", zIndex:2 }}>
-          <Login onLogin={(t, u) => { setToken(t); setUsername(u); }} />
-        </div>
+        <Login onLogin={(t, u) => { setToken(t); setUsername(u); }} />
       ) : (
-        <div style={{ position:"relative", zIndex:2 }}>
+        <div style={{ background: C.bg, minHeight: "100vh" }}>
           <Sidebar active={active} setActive={setActive} username={username} onLogout={() => { setToken(null); setUsername(""); }} />
-          <main style={{ marginLeft:240, padding:"36px 40px", minHeight:"100vh" }}>
+          <main style={{ marginLeft:240, padding:"36px 40px", minHeight:"100vh", background: C.bg }}>
             {tabs[active]}
           </main>
         </div>
