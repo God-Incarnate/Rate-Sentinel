@@ -1,6 +1,8 @@
 package com.prashant.rate_sentinel.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,15 +22,19 @@ public class RateLimitRule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false)
     private String clientId;
 
+    @NotBlank
     @Column(nullable = false)
     private String route;
 
+    @NotNull
     @Column(nullable = false)
     private Long requestLimit;
 
+    @NotNull
     @Column(nullable = false)
     private Long windowSeconds;
 

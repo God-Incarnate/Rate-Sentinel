@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -50,10 +51,47 @@ public class RateLimitService {
 
     @Cacheable(value = "rate-limit-rules", key = "#clientId + ':' + #route")
     public RateLimitRule getRule(String clientId, String route) {
-        // Try exact match first, then wildcard client, then global default
-        return ruleRepository.findByClientIdAndRouteAndActiveTrue(clientId, route)
-                .or(() -> ruleRepository.findByClientIdAndRouteAndActiveTrue("*", route))
-                .or(() -> ruleRepository.findByClientIdAndRouteAndActiveTrue("*", "*"))
+        // normalize route
+        if (route == null) route = "/";
+        route = route.trim();
+
+        // Try exact match first, then wildcard client for exact route
+        var exact = ruleRepository.findByClientIdAndRouteAndActiveTrue(clientId, route);
+        if (exact.isPresent()) return exact.get();
+
+        var wildcardClient = ruleRepository.findByClientIdAndRouteAndActiveTrue("*", route);
+        if (wildcardClient.isPresent()) return wildcardClient.get();
+
+        // Try pattern matching — allow rules like /api/** or /api/v1/otp/*
+        AntPathMatcher matcher = new AntPathMatcher();
+        var activeRules = ruleRepository.findByActiveTrue();
+
+        // Filter rules that apply to this client (clientId exact or '*') and whose route pattern matches
+        RateLimitRule best = null;
+        for (RateLimitRule r : activeRules) {
+            if (!(r.getClientId().equals(clientId) || r.getClientId().equals("*"))) continue;
+            String pattern = r.getRoute();
+            if (pattern == null) continue;
+            pattern = pattern.trim();
+            if (!pattern.startsWith("/")) pattern = "/" + pattern;
+            try {
+                if (pattern.equals("*") || pattern.equals("/*") || matcher.match(pattern, route)) {
+                    if (best == null) best = r;
+                    else {
+                        // prefer more specific (longer) pattern
+                        if (pattern.length() > (best.getRoute() == null ? 0 : best.getRoute().length())) {
+                            best = r;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (best != null) return best;
+
+        // fallback to global default
+        return ruleRepository.findByClientIdAndRouteAndActiveTrue("*", "*")
                 .orElseGet(this::defaultRule);
     }
 

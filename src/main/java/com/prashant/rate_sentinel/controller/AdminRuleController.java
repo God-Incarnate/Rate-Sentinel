@@ -29,6 +29,7 @@ public class AdminRuleController {
     @PreAuthorize("hasRole('ADMIN')")
     @CacheEvict(value = "rate-limit-rules", allEntries = true)
     public ResponseEntity<RateLimitRule> createRule(@Valid @RequestBody RateLimitRule rule) {
+        normalizeRuleRoute(rule);
         return ResponseEntity.ok(ruleRepository.save(rule));
     }
 
@@ -38,7 +39,17 @@ public class AdminRuleController {
     public ResponseEntity<RateLimitRule> updateRule(@PathVariable Long id,
                                                      @Valid @RequestBody RateLimitRule rule) {
         rule.setId(id);
+        normalizeRuleRoute(rule);
         return ResponseEntity.ok(ruleRepository.save(rule));
+    }
+
+    // ensure route is stored in normalized form (leading slash) so matching works with request.getRequestURI()
+    private void normalizeRuleRoute(RateLimitRule rule) {
+        String r = rule.getRoute();
+        if (r == null) return;
+        r = r.trim();
+        if (!r.startsWith("/")) r = "/" + r;
+        rule.setRoute(r);
     }
 
     @DeleteMapping("/{id}")
