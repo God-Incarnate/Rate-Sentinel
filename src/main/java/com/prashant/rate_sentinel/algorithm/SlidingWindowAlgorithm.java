@@ -1,9 +1,12 @@
 package com.prashant.rate_sentinel.algorithm;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -20,22 +23,22 @@ public class SlidingWindowAlgorithm implements RateLimitAlgorithm {
         long now = Instant.now().toEpochMilli();
         long windowStart = now - (windowSeconds * 1000);
         String redisKey = "sw:" + key;
-
-        // Remove entries outside the window
-        redisTemplate.opsForZSet().removeRangeByScore(redisKey, 0, windowStart);
-
-        // Count current entries in window
-        Long count = redisTemplate.opsForZSet().zCard(redisKey);
-        if (count != null && count >= limit) {
-            return false;
-        }
-
-        // Add current request timestamp (score = timestamp, member = timestamp:nanoTime for uniqueness)
+        // Use a Lua script to perform remove/count/add/expire atomically to avoid race conditions
         String member = now + ":" + System.nanoTime();
-        redisTemplate.opsForZSet().add(redisKey, member, now);
-        redisTemplate.expire(redisKey, windowSeconds + 1, TimeUnit.SECONDS);
+        String script = "redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1]); " +
+                "local count = redis.call('ZCARD', KEYS[1]); " +
+                "if tonumber(count) >= tonumber(ARGV[4]) then return 0; end; " +
+                "redis.call('ZADD', KEYS[1], ARGV[2], ARGV[3]); " +
+                "redis.call('EXPIRE', KEYS[1], tonumber(ARGV[5])); " +
+                "return 1;";
 
-        return true;
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(script, Long.class);
+
+        Long result = redisTemplate.execute(redisScript,
+                Collections.singletonList(redisKey),
+                String.valueOf(windowStart), String.valueOf(now), member, String.valueOf(limit), String.valueOf(windowSeconds + 1));
+
+        return result != null && result == 1L;
     }
 
     @Override

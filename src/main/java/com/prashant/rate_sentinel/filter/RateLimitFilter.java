@@ -44,6 +44,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String clientId = extractClientId(request);
         String route = request.getRequestURI();
 
+        // DEBUG: log resolved clientId and route so we can verify which rule will be evaluated
+        if (log.isDebugEnabled()) {
+            log.debug("RateLimitFilter - incoming request clientId={} route={} method={}",
+                    clientId, route, request.getMethod());
+        }
+
         // Skip actuator and auth endpoints
         if (shouldSkip(route)) {
             filterChain.doFilter(request, response);
@@ -51,6 +57,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         RateLimitResult result = rateLimitService.checkRateLimit(clientId, route);
+
+        // DEBUG: log chosen enforcement details
+        if (log.isDebugEnabled()) {
+            log.debug("RateLimitFilter - evaluated result allowed={} limit={} remaining={} algo={} key={} windowSeconds={}",
+                    result.isAllowed(), result.getLimit(), result.getRemaining(), result.getAlgorithm(), result.getKey(), result.getWindowSeconds());
+        }
 
         // Always set rate limit headers
         response.setHeader("X-RateLimit-Limit", String.valueOf(result.getLimit()));
