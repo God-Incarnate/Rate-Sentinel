@@ -45,13 +45,14 @@ const GLOBAL_CSS = `
   }
   input::placeholder { color: #94A3B8; }
   select option { background: #fff; color: ${C.text}; }
-  @keyframes spin    { to { transform: rotate(360deg); } }
-  @keyframes fadeUp  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-  @keyframes pulse   { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
-  @keyframes glow    { 0%,100%{ text-shadow:0 0 8px ${C.accent1}40; } 50%{ text-shadow:0 0 20px ${C.accent1}66, 0 0 40px ${C.accent1}22; } }
-  @keyframes borderPulse { 0%,100%{ border-color:${C.accent1}18; } 50%{ border-color:${C.accent1}44; } }
-  @keyframes float   { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
-  @keyframes robotFloat { 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-10px) scale(1.005); } }
+   @keyframes spin    { to { transform: rotate(360deg); } }
+   @keyframes fadeUp  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+   @keyframes pulse   { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+   @keyframes glow    { 0%,100%{ text-shadow:0 0 8px ${C.accent1}40; } 50%{ text-shadow:0 0 20px ${C.accent1}66, 0 0 40px ${C.accent1}22; } }
+   @keyframes borderPulse { 0%,100%{ border-color:${C.accent1}18; } 50%{ border-color:${C.accent1}44; } }
+   @keyframes float   { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+   @keyframes robotFloat { 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-10px) scale(1.005); } }
+   @keyframes scanline { 0% { top: -100%; } 100% { top: 100%; } }
   .fade-up  { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
   .glow-text{ animation: glow 3s ease-in-out infinite; }
 `;
@@ -184,13 +185,21 @@ const api = {
       init = { method: "POST", headers, body: new URLSearchParams(body) };
     }
     const r = await fetch(`${BASE}${path}`, init);
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    if (!r.ok) {
+      const err = new Error(`${r.status} ${r.statusText}`);
+      err.status = r.status;
+      throw err;
+    }
     const ct = r.headers.get("content-type") || "";
     return ct.includes("json") ? r.json() : r.text();
   },
   async get(path, token) {
     const r = await fetch(`${BASE}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    if (!r.ok) {
+      const err = new Error(`${r.status} ${r.statusText}`);
+      err.status = r.status;
+      throw err;
+    }
     return r.json();
   },
   async put(path, body, token) {
@@ -199,14 +208,40 @@ const api = {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
     });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    if (!r.ok) {
+      const err = new Error(`${r.status} ${r.statusText}`);
+      err.status = r.status;
+      throw err;
+    }
     return r.json();
   },
   async del(path, token) {
     const r = await fetch(`${BASE}${path}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    if (!r.ok) {
+      const err = new Error(`${r.status} ${r.statusText}`);
+      err.status = r.status;
+      throw err;
+    }
   },
 };
+
+  // Access denied overlay component
+  function AccessDenied({ message }) {
+    // Render the overlay visually across the viewport but allow pointer
+    // events to pass through to the sidebar/navigation. We set the wrapper
+    // to `pointerEvents: 'none'` and enable events only on the inner card
+    // (`pointerEvents: 'auto'`). This keeps the overlay visible but lets
+    // users interact with the nav while the message is shown.
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, pointerEvents: "none" }}>
+        <div style={{ textAlign: "center", background: "rgba(255,255,255,.06)", padding: 22, borderRadius: 16, backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,.12)", boxShadow: "0 12px 40px rgba(0,0,0,.25)", maxWidth: 420, width: "92%", pointerEvents: "auto" }}>
+          <img src={robotStanding} alt="robot" style={{ width: 140, height: "auto", marginBottom: 12, filter: "drop-shadow(0 20px 40px rgba(0,0,0,.25))" }} />
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Ooops... You do not have access</div>
+          <div style={{ color: "rgba(255,255,255,.85)", fontSize: 13 }}>{message || "You do not have permission to view this section."}</div>
+        </div>
+      </div>
+    );
+  }
 
 /* ─── MICRO COMPONENTS ──────────────────────────────────────────────────────── */
 const ALGO_COLORS = { SLIDING_WINDOW: C.accent2, TOKEN_BUCKET: C.accent3, FIXED_WINDOW: C.warn };
@@ -366,306 +401,367 @@ function Login({ onLogin }) {
     } finally { setLoading(false); }
   }
 
-  return (
-    <div style={{
-      minHeight: "100vh",
-      display: "grid",
-      gridTemplateColumns: "1.1fr .9fr",
-      background: "#ffffff",
-      overflow: "hidden",
-      position: "relative",
-    }}>
+   return (
+     <div style={{
+       minHeight: "100vh",
+       display: "grid",
+       gridTemplateColumns: "1fr 1fr",
+       background: "#ffffff",
+       overflow: "hidden",
+       position: "relative",
+     }}>
 
-      {/* LEFT VISUAL SIDE */}
-      <div style={{
-        position: "relative",
-        background: "#FFFFFF",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-      }}>
+       {/* LEFT VISUAL SIDE */}
+       <div style={{
+         position: "relative",
+         background: `linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 50%, #F0F4FF 100%)`,
+         display: "flex",
+         alignItems: "center",
+         justifyContent: "center",
+         overflow: "hidden",
+       }}>
 
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `radial-gradient(circle, rgba(14,165,233,.08) 1px, transparent 1px)`,
-          backgroundSize: "38px 38px",
-          opacity: .8,
-        }} />
+         {/* Animated gradient blobs */}
+         <div style={{
+           position: "absolute",
+           top: "-20%",
+           left: "-15%",
+           width: 500,
+           height: 500,
+           borderRadius: "50%",
+           background: `radial-gradient(circle, ${C.accent1}15, transparent 70%)`,
+           filter: "blur(40px)",
+           animation: "float 12s ease-in-out infinite",
+         }} />
 
-        <div style={{
-          position: "absolute",
-          top: "-10%",
-          left: "-10%",
-          width: 420,
-          height: 420,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${C.accent1}18, transparent 70%)`,
-        }} />
+         <div style={{
+           position: "absolute",
+           bottom: "-15%",
+           right: "-10%",
+           width: 450,
+           height: 450,
+           borderRadius: "50%",
+           background: `radial-gradient(circle, ${C.accent2}12, transparent 70%)`,
+           filter: "blur(40px)",
+           animation: "float 15s ease-in-out infinite reverse",
+         }} />
 
-        <div style={{
-          position: "absolute",
-          bottom: "-10%",
-          right: "-10%",
-          width: 460,
-          height: 460,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${C.accent2}14, transparent 70%)`,
-        }} />
+         {/* Grid overlay */}
+         <div style={{
+           position: "absolute",
+           inset: 0,
+           backgroundImage: `radial-gradient(circle, rgba(14,165,233,.05) 1px, transparent 1px)`,
+           backgroundSize: "50px 50px",
+           opacity: 0.6,
+         }} />
 
-        <div style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "60px",
-        }}>
+         <div style={{
+           position: "relative",
+           width: "100%",
+           height: "100%",
+           display: "flex",
+           flexDirection: "column",
+           alignItems: "center",
+           justifyContent: "center",
+           padding: "60px 40px",
+         }}>
 
-          <div style={{
-            position: "absolute",
-            left: "8%",
-            top: "7%",
-            zIndex: 6,
-            maxWidth: 520,
-          }}>
-            <div style={{
-              fontSize: 64,
-              fontWeight: 900,
-              color: C.text,
-              lineHeight: .95,
-              letterSpacing: "-.08em",
-            }}>
-              rate<span style={{ color: C.accent1 }}>-sentinel</span>
-            </div>
+           {/* Branding section */}
+           <div style={{
+             position: "absolute",
+             top: "8%",
+             left: "8%",
+             zIndex: 6,
+             animation: "fadeUp .6s .1s cubic-bezier(.16,1,.3,1) both",
+           }}>
+             <div style={{
+               fontSize: 56,
+               fontWeight: 900,
+               color: C.text,
+               lineHeight: 1,
+               letterSpacing: "-.08em",
+               marginBottom: 16,
+             }}>
+               rate<span style={{ color: C.accent1 }}>-sentinel</span>
+             </div>
 
-            <div style={{
-              marginTop: 20,
-              color: C.muted,
-              fontSize: 16,
-              maxWidth: 460,
-              lineHeight: 1.8,
-            }}>
-              Intelligent payment protection platform with AI-powered rate limiting,
-              OTP orchestration and enterprise-grade transaction monitoring.
-            </div>
-          </div>
+             <div style={{
+               color: C.muted,
+               fontSize: 15,
+               maxWidth: 420,
+               lineHeight: 1.7,
+               fontWeight: 400,
+             }}>
+               Enterprise-grade rate limiting with AI-powered protection, intelligent OTP orchestration, and real-time transaction monitoring.
+             </div>
+           </div>
 
-          <div style={{
-            position: "absolute",
-            left: "-120px",
-            top: "48%",
-            transform: "translateY(-50%)",
-            zIndex: 5,
-          }}>
-            <div style={{
-              background: "#FFFFFF",
-              borderRadius: "0 34px 34px 0",
-              padding: "20px 20px 20px 0",
-              boxShadow: "30px 0 80px rgba(15,23,42,.12)",
-            }}>
-              <img
-                src={robotPeek}
-                alt="robot peek"
-                style={{
-                  width: "46vw",
-                  maxWidth: 650,
-                  display: "block",
-                  filter: "drop-shadow(0 30px 60px rgba(14,165,233,.22))",
-                  animation: "robotFloat 5s ease-in-out infinite",
-                }}
-              />
-            </div>
-          </div>
+           {/* Robot Standing - centered and prominent */}
+           <img
+             src={ROBOT_URL}
+             alt="robot standing"
+             style={{
+               position: "absolute",
+               width: "320px",
+               height: "auto",
+               zIndex: 5,
+               filter: "drop-shadow(0 40px 80px rgba(99,102,241,.15))",
+               animation: "robotFloat 4s ease-in-out infinite",
+             }}
+           />
 
-          <img
-            src={ROBOT_URL}
-            alt="robot standing"
-            style={{
-              position: "absolute",
-              right: "4%",
-              bottom: "2%",
-              width: "30vw",
-              maxWidth: 430,
-              zIndex: 4,
-              filter: "drop-shadow(0 30px 50px rgba(99,102,241,.18))",
-              animation: "float 6s ease-in-out infinite",
-            }}
-          />
+           {/* Robot Peek - subtle accent from side */}
+           <div style={{
+             position: "absolute",
+             right: "-80px",
+             bottom: "-40px",
+             zIndex: 4,
+             width: "280px",
+             height: "280px",
+             display: "flex",
+             alignItems: "flex-end",
+             justifyContent: "flex-end",
+           }}>
+             <img
+               src={robotPeek}
+               alt="robot peek"
+               style={{
+                 height: "100%",
+                 width: "auto",
+                 display: "block",
+                 filter: "drop-shadow(0 20px 40px rgba(14,165,233,.12)) opacity(0.85)",
+                 animation: "float 5s ease-in-out infinite",
+               }}
+             />
+           </div>
+         </div>
+       </div>
 
-          <div style={{
-            position: "absolute",
-            left: "8%",
-            bottom: "8%",
-            zIndex: 4,
-            opacity: 0,
-          }}>
-<div />
-          </div>
-        </div>
-      </div>
+       {/* RIGHT LOGIN SIDE */}
+       <div style={{
+         position: "relative",
+         background: `linear-gradient(135deg, ${C.accent2}EE 0%, ${C.accent1}EE 50%, ${C.accent2}CC 100%)`,
+         display: "flex",
+         alignItems: "center",
+         justifyContent: "center",
+         padding: "48px",
+         overflow: "hidden",
+       }}>
 
-      {/* RIGHT LOGIN SIDE */}
-      <div style={{
-        position: "relative",
-        background: `linear-gradient(145deg, ${C.accent2} 0%, ${C.accent1} 100%)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "48px",
-        overflow: "hidden",
-      }}>
+         {/* Animated gradient blobs */}
+         <div style={{
+           position: "absolute",
+           width: 600,
+           height: 600,
+           borderRadius: "50%",
+           background: "rgba(255,255,255,.08)",
+           top: "-20%",
+           right: "-10%",
+           filter: "blur(30px)",
+           animation: "float 16s ease-in-out infinite",
+         }} />
 
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "radial-gradient(circle at top right, rgba(255,255,255,.18), transparent 35%)",
-        }} />
+         <div style={{
+           position: "absolute",
+           width: 400,
+           height: 400,
+           borderRadius: "50%",
+           background: "rgba(255,255,255,.04)",
+           bottom: "-15%",
+           left: "-5%",
+           filter: "blur(30px)",
+           animation: "float 18s ease-in-out infinite reverse",
+         }} />
 
-        <div style={{
-          position: "absolute",
-          width: 520,
-          height: 520,
-          borderRadius: "50%",
-          background: "rgba(255,255,255,.08)",
-          top: "-15%",
-          right: "-10%",
-          filter: "blur(20px)",
-        }} />
+         {/* Radial light gradient overlay */}
+         <div style={{
+           position: "absolute",
+           inset: 0,
+           background: "radial-gradient(circle at top right, rgba(255,255,255,.2), transparent 45%)",
+         }} />
 
-        <div className="fade-up" style={{
-          width: "100%",
-          maxWidth: 460,
-          position: "relative",
-          zIndex: 2,
-        }}>
+         <div className="fade-up" style={{
+           width: "100%",
+           maxWidth: 480,
+           position: "relative",
+           zIndex: 2,
+         }}>
 
-          <div style={{ marginBottom: 28 }}>
-            <div style={{
-              color: "#ffffff",
-              fontSize: 42,
-              fontWeight: 800,
-              letterSpacing: "-.05em",
-              marginBottom: 10,
-            }}>
-              Welcome Back
-            </div>
+           {/* Header */}
+           <div style={{ marginBottom: 36 }}>
+             <div style={{
+               color: "#ffffff",
+               fontSize: 48,
+               fontWeight: 800,
+               letterSpacing: "-.05em",
+               marginBottom: 12,
+             }}>
+               Welcome
+             </div>
 
-            <div style={{
-              color: "rgba(255,255,255,.75)",
-              fontSize: 14,
-              letterSpacing: ".04em",
-            }}>
-              Access your intelligent command centre
-            </div>
-          </div>
+             <div style={{
+               color: "rgba(255,255,255,.8)",
+               fontSize: 15,
+               letterSpacing: ".02em",
+               fontWeight: 400,
+             }}>
+               Access your intelligent command centre
+             </div>
+           </div>
 
-          <div style={{
-            background: "rgba(255,255,255,.14)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            border: "1px solid rgba(255,255,255,.18)",
-            borderRadius: 28,
-            padding: 34,
-            boxShadow: "0 30px 80px rgba(0,0,0,.18)",
-          }}>
-            <form onSubmit={submit}>
-              <Field label="Identity">
-                <input value={u} onChange={e => setU(e.target.value)} placeholder="username" autoComplete="username" />
-              </Field>
+           {/* Form Card */}
+           <div style={{
+             background: "rgba(255,255,255,.14)",
+             backdropFilter: "blur(32px)",
+             WebkitBackdropFilter: "blur(32px)",
+             border: "1px solid rgba(255,255,255,.22)",
+             borderRadius: 32,
+             padding: 40,
+             boxShadow: "0 32px 80px rgba(0,0,0,.2), inset 0 0 60px rgba(255,255,255,.08)",
+           }}>
+             <form onSubmit={submit}>
+               <Field label="Username">
+                 <input value={u} onChange={e => setU(e.target.value)} placeholder="admin" autoComplete="username" style={{
+                   background: "rgba(255,255,255,.12)",
+                   border: "1px solid rgba(255,255,255,.2)",
+                   color: "#ffffff",
+                 }} />
+               </Field>
 
-              <Field label="Access Key">
-                <input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
-              </Field>
+               <Field label="Password">
+                 <input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" style={{
+                   background: "rgba(255,255,255,.12)",
+                   border: "1px solid rgba(255,255,255,.2)",
+                   color: "#ffffff",
+                 }} />
+               </Field>
 
-              {err && (
-                <div style={{
-                  color: "#fff",
-                  fontSize: 12,
-                  marginBottom: 14,
-                  padding: "10px 14px",
-                  background: "rgba(239,68,68,.25)",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,.16)",
-                }}>
-                  ⚠ {err}
-                </div>
-              )}
+               <style>{`
+                 input::placeholder { color: rgba(255,255,255,.5) !important; }
+                 input:focus { border-color: rgba(255,255,255,.4) !important; box-shadow: 0 0 0 3px rgba(255,255,255,.08) !important; }
+               `}</style>
 
-              <Btn
-                onClick={submit}
-                variant="glow"
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "15px",
-                  fontSize: 13,
-                  background: "#ffffff",
-                  color: C.accent2,
-                  fontWeight: 800,
-                  border: "none",
-                  boxShadow: "0 12px 30px rgba(255,255,255,.24)",
-                }}
-              >
-                {loading ? <Spinner /> : "LOGIN →"}
-              </Btn>
-            </form>
+               {err && (
+                 <div style={{
+                   color: "#fff",
+                   fontSize: 13,
+                   marginBottom: 16,
+                   padding: "12px 16px",
+                   background: "rgba(239,68,68,.3)",
+                   borderRadius: 12,
+                   border: "1px solid rgba(239,68,68,.5)",
+                   backdropFilter: "blur(8px)",
+                 }}>
+                   ⚠ {err}
+                 </div>
+               )}
 
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              margin: "24px 0 16px",
-            }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.18)" }} />
-              <span style={{ color: "rgba(255,255,255,.6)", fontSize: 10, letterSpacing: ".12em" }}>
-                QUICK ACCESS
-              </span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.18)" }} />
-            </div>
+               <Btn
+                 onClick={submit}
+                 disabled={loading}
+                 style={{
+                   width: "100%",
+                   padding: "14px",
+                   fontSize: 14,
+                   fontWeight: 700,
+                   background: "#ffffff",
+                   color: C.accent2,
+                   border: "none",
+                   boxShadow: "0 16px 40px rgba(255,255,255,.25), 0 0 0 1px rgba(255,255,255,.1)",
+                   letterspacing: ".04em",
+                   transition: "all .2s",
+                 }}
+               >
+                 {loading ? <Spinner /> : "SIGN IN →"}
+               </Btn>
+             </form>
 
-            <div style={{
-              background: "rgba(255,255,255,.08)",
-              border: "1px solid rgba(255,255,255,.12)",
-              borderRadius: 14,
-              padding: "14px 16px",
-            }}>
-              {[["admin","admin123","ADMIN"],["client1","client123","CLIENT"]].map(([user,pass,role]) => (
-                <div
-                  key={user}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <span style={{
-                    color: "#ffffff",
-                    fontSize: 12,
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}>
-                    {user} / {pass}
-                  </span>
+             {/* Divider */}
+             <div style={{
+               display: "flex",
+               alignItems: "center",
+               gap: 12,
+               margin: "28px 0 20px",
+             }}>
+               <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,.2)" }} />
+               <span style={{ color: "rgba(255,255,255,.5)", fontSize: 11, letterSpacing: ".12em", fontWeight: 600 }}>
+                 DEMO ACCOUNTS
+               </span>
+               <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,.2)" }} />
+             </div>
 
-                  <div style={{
-                    background: "rgba(255,255,255,.16)",
-                    borderRadius: 999,
-                    padding: "4px 10px",
-                    fontSize: 10,
-                    color: "#ffffff",
-                    letterSpacing: ".08em",
-                  }}>
-                    {role}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+             {/* Quick Access Cards */}
+             <div style={{
+               display: "grid",
+               gridTemplateColumns: "1fr 1fr",
+               gap: 10,
+             }}>
+               {[["admin","admin123","ADMIN"],["client1","client123","CLIENT"]].map(([user,pass,role]) => (
+                 <div
+                   key={user}
+                   onClick={() => { setU(user); setP(pass); }}
+                   style={{
+                     background: "rgba(255,255,255,.08)",
+                     border: "1px solid rgba(255,255,255,.16)",
+                     borderRadius: 14,
+                     padding: "12px 14px",
+                     cursor: "pointer",
+                     transition: "all .2s",
+                     display: "flex",
+                     flexDirection: "column",
+                     gap: 6,
+                   }}
+                   onMouseEnter={e => {
+                     e.currentTarget.style.background = "rgba(255,255,255,.14)";
+                     e.currentTarget.style.borderColor = "rgba(255,255,255,.28)";
+                     e.currentTarget.style.transform = "translateY(-2px)";
+                   }}
+                   onMouseLeave={e => {
+                     e.currentTarget.style.background = "rgba(255,255,255,.08)";
+                     e.currentTarget.style.borderColor = "rgba(255,255,255,.16)";
+                     e.currentTarget.style.transform = "translateY(0)";
+                   }}
+                 >
+                   <span style={{
+                     color: "#ffffff",
+                     fontSize: 12,
+                     fontFamily: "'JetBrains Mono', monospace",
+                     fontWeight: 600,
+                   }}>
+                     {user}
+                   </span>
+
+                   <div style={{
+                     display: "flex",
+                     alignItems: "center",
+                     justifyContent: "space-between",
+                   }}>
+                     <span style={{
+                       color: "rgba(255,255,255,.6)",
+                       fontSize: 10,
+                       fontFamily: "'JetBrains Mono', monospace",
+                       fontWeight: 400,
+                     }}>
+                       {pass}
+                     </span>
+                     <span style={{
+                       background: "rgba(255,255,255,.16)",
+                       borderRadius: 999,
+                       padding: "3px 8px",
+                       fontSize: 9,
+                       color: "#ffffff",
+                       letterSpacing: ".1em",
+                       fontWeight: 700,
+                     }}>
+                       {role}
+                     </span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           </div>
+         </div>
+       </div>
     </div>
   );
 }
@@ -767,7 +863,22 @@ function Sidebar({ active, setActive, username, onLogout }) {
 /* ─── OVERVIEW ────────────────────────────────────────────────────────────── */
 function Overview({ token }) {
   const [rules, setRules] = useState([]);
-  useEffect(() => { api.get("/api/admin/rules", token).then(setRules).catch(() => {}); }, [token]);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await api.get("/api/admin/rules", token);
+        if (mounted) { setRules(data); setAccessDenied(false); }
+      } catch (e) {
+        if (e && e.status === 403) {
+          if (mounted) setAccessDenied(true);
+        }
+      }
+    })();
+    return () => { mounted = false; };
+  }, [token]);
 
   const active = rules.filter(r => r.active).length;
   const byAlgo = ALGO_COLORS;
@@ -786,6 +897,7 @@ function Overview({ token }) {
 
       {/* API Map */}
       <GlassCard delay={.2} style={{ marginBottom: 20 }}>
+        {accessDenied && <AccessDenied message="Admin rules are restricted to administrators." />}
         <div style={{ color: C.muted, fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 18 }}>
           ◈ API Endpoint Map
         </div>
@@ -861,13 +973,22 @@ function RulesTab({ token }) {
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast]   = useState({ msg:"", ok:true });
+  const [accessDenied, setAccessDenied] = useState(false);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState({ clientId:"", route:"", requestLimit:100, windowSeconds:60, algorithm:"SLIDING_WINDOW", active:true });
 
   const show = (msg, ok=true) => { setToast({ msg, ok }); setTimeout(() => setToast({ msg:"" }), 3500); };
   const load = useCallback(async () => {
     setLoading(true);
-    try { setRules(await api.get("/api/admin/rules", token)); } catch(e){ show(e.message, false); }
+    try {
+      const data = await api.get("/api/admin/rules", token);
+      setRules(data);
+      setAccessDenied(false);
+    } catch(e){
+      if (e && e.status === 403) {
+        setAccessDenied(true);
+      } else { show(e.message, false); }
+    }
     setLoading(false);
   }, [token]);
   useEffect(() => { load(); }, [load]);
@@ -891,6 +1012,7 @@ function RulesTab({ token }) {
 
   return (
     <div>
+      {accessDenied && <AccessDenied message="You must be an ADMIN to manage rules." />}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24 }}>
         <div>
           <SectionTitle accent={C.accent2}>Rate Limit Rules</SectionTitle>
@@ -1001,6 +1123,7 @@ function OtpTab({ token }) {
   const [toast, setToast] = useState({ msg:"", ok:true });
   const [gLoad, setGLoad] = useState(false);
   const [vLoad, setVLoad] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const show = (msg, ok=true) => { setToast({ msg, ok }); setTimeout(() => setToast({msg:""}), 3500); };
 
   async function generate() {
@@ -1008,6 +1131,7 @@ function OtpTab({ token }) {
     try {
       const r = await api.post(`/api/v1/otp/generate-otp?identifier=${encodeURIComponent(gf.identifier)}&otpType=${gf.otpType}`, {}, token);
       setGRes(r); show(`OTP dispatched via ${gf.otpType}`);
+      setAccessDenied(false);
     } catch(e){ show(e.message, false); }
     setGLoad(false);
   }
@@ -1017,12 +1141,14 @@ function OtpTab({ token }) {
     try {
       const r = await api.post(`/api/v1/otp/verify-otp?identifier=${encodeURIComponent(vf.identifier)}&otp=${vf.otp}&otpType=${vf.otpType}`, {}, token);
       setVRes(r); show(r.Verified ? "Verification successful" : "OTP incorrect", r.Verified);
+      setAccessDenied(false);
     } catch(e){ show(e.message, false); }
     setVLoad(false);
   }
 
   return (
     <div>
+      {accessDenied && <AccessDenied message="You do not have access to OTP features." />}
       <SectionTitle accent={C.accent3}>OTP Tester</SectionTitle>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
 
@@ -1106,6 +1232,7 @@ function PaymentsTab({ token }) {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [toast, setToast] = useState({ msg:"", ok:true });
+  const [accessDenied, setAccessDenied] = useState(false);
   const show = (msg, ok=true) => { setToast({msg,ok}); setTimeout(()=>setToast({msg:""}), 3500); };
   const F = (k,v) => setForm(f=>({...f,[k]:v}));
 
@@ -1123,6 +1250,7 @@ function PaymentsTab({ token }) {
       setResult(data);
       setHistory(h => [{...data, idem},...h].slice(0,10));
       show(`Payment ${data.status} — ID #${data.id}`);
+      setAccessDenied(false);
     } catch(e){ show(e.message, false); }
     setLoading(false);
   }
@@ -1131,6 +1259,7 @@ function PaymentsTab({ token }) {
 
   return (
     <div>
+      {accessDenied && <AccessDenied message="You do not have access to Payments." />}
       <SectionTitle accent={C.warn}>Payment Processor</SectionTitle>
       <div style={{ display:"grid", gridTemplateColumns:"380px 1fr", gap:20, alignItems:"start" }}>
 
