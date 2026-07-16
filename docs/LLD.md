@@ -224,3 +224,15 @@ Operational guidance:
 - Endpoint naming conventions are mixed (`/api/v1/payment/createPayment`); standardization recommended.
 - LLD assumes single-region deployment with shared Redis/Kafka.
 
+## 10. Fix and Flow Consolidation Notes
+
+- **Rate limiting correctness:** `SlidingWindowAlgorithm` uses an atomic Lua script for
+  remove-count-check-add-expire execution in one Redis operation.
+- **Rule applicability:** `RateLimitService` applies exact, wildcard, and pattern-based lookup,
+  then falls back to global and property defaults.
+- **Cache consistency:** Admin rule create/update/delete endpoints evict `rate-limit-rules` cache.
+- **Caller identity alignment:** `JWTAuthFilter` sets `clientId` request attribute, consumed by
+  `RateLimitFilter` before IP fallback.
+- **Payment deduplication flow:** Redis fast-path and MySQL durable check are both used before
+  creating a new payment row.
+
