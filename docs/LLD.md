@@ -63,6 +63,32 @@ Rule resolution order:
 5. `RateLimitAlgorithm#isAllowed` and `#getRemaining`
 6. Filter writes headers and either stops (429) or forwards chain
 
+### 2.4 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant F as RateLimitFilter
+    participant S as RateLimitService
+    participant A as AlgorithmFactory
+    participant R as Redis
+
+    C->>F: HTTP request
+    F->>F: Resolve clientId + route
+    F->>S: checkRateLimit(clientId, route)
+    S->>S: getRule(clientId, route)
+    S->>A: getAlgorithm(rule.algorithm)
+    A-->>S: algorithm implementation
+    S->>R: evaluate allowance / remaining
+    R-->>S: decision + counters
+    S-->>F: RateLimitResult
+    alt allowed
+        F-->>C: 200 + X-RateLimit-* headers
+    else throttled
+        F-->>C: 429 + JSON error body
+    end
+```
+
 ## 3. LLD-2: Authentication and Security
 
 Primary classes:
@@ -91,6 +117,23 @@ Primary classes:
 2. `AuthenticationManager` authenticates principal.
 3. `JWTTokenProvider` creates signed token with role claim and expiration.
 4. Token is returned to caller for subsequent protected calls.
+
+### 3.4 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as User/Client
+    participant A as AuthController
+    participant M as AuthenticationManager
+    participant T as JWTTokenProvider
+
+    U->>A: POST /api/auth/login
+    A->>M: authenticate(username, password)
+    M-->>A: Authentication + authorities
+    A->>T: generateToken(username, role)
+    T-->>A: signed JWT
+    A-->>U: 200 {token, type, username}
+```
 
 ## 4. LLD-3: OTP Generation and Verification
 
@@ -126,6 +169,46 @@ Primary classes:
 - OTP expired.
 - Account currently locked due to excessive attempts.
 
+### 4.4 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant O as OTPController
+    participant S as OTPService
+    participant R as OTPRepository
+    participant D as NotificationDispatcher
+    participant K as Kafka
+
+    C->>O: POST /api/v1/otp/generate-otp
+    O->>S: generatesOTP(identifier, otpType)
+    S->>S: lockCheck + generateOtp + hash
+    S->>R: save(OTPRecord)
+    R-->>S: saved record
+    S->>D: dispatch(NotificationEvent)
+    D->>K: publish OTP event
+    K-->>D: ack
+    S-->>O: success message
+    O-->>C: 200 {Message}
+
+    C->>O: POST /api/v1/otp/verify-otp
+    O->>S: verifiesOTP(identifier, otp, otpType)
+    S->>R: find latest unused OTPRecord
+    R-->>S: OTPRecord / none
+    S->>S: expiry + attempts + BCrypt match
+    alt verified
+        S->>R: save(used=true)
+        R-->>S: saved
+        S-->>O: true
+        O-->>C: 200 {Verified:true}
+    else not verified
+        S->>R: save(attempt increment)
+        R-->>S: saved
+        S-->>O: false / lock exception
+        O-->>C: 200 {Verified:false} or error
+    end
+```
+
 ## 5. LLD-4: Idempotent Payment Processing
 
 Primary classes:
@@ -151,6 +234,52 @@ Primary classes:
 - DB unique constraint on idempotency key prevents duplicate inserts.
 - Redis accelerates retries while DB remains source of truth.
 - Event dispatch is asynchronous and does not block payment API response.
+
+### 5.3 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant P as PaymentController
+    participant S as PaymentService
+    participant R as Redis
+    participant D as PaymentRepository
+    participant N as NotificationDispatcher
+    participant K as Kafka
+
+    C->>P: POST /api/v1/payment/createPayment
+    P->>S: processPayment(clientId, idempotencyKey, amount, currency, description)
+    S->>R: get(payment:idem:{key})
+    alt redis hit
+        R-->>S: existing payment id
+        S->>D: findByIdempotencyKey(key)
+        D-->>S: existing payment
+        S-->>P: return existing payment
+        P-->>C: 200 Payment
+    else redis miss
+        S->>D: existsByIdempotencyKey(key)
+        alt exists in DB
+            D-->>S: true
+            S->>D: findByIdempotencyKey(key)
+            D-->>S: existing payment
+            S-->>P: return existing payment
+            P-->>C: 200 Payment
+        else new payment
+            D-->>S: false
+            S->>D: save(PENDING)
+            D-->>S: saved
+            S->>S: processPaymentGateway()
+            S->>D: save(SUCCESS/FAILED)
+            D-->>S: saved
+            S->>R: set idempotency key TTL
+            S->>N: dispatch(payment event)
+            N->>K: publish payment event
+            K-->>N: ack
+            S-->>P: payment result
+            P-->>C: 200 Payment
+        end
+    end
+```
 
 ## 6. LLD-5: Notification Dispatch
 
@@ -180,6 +309,22 @@ Dispatch behavior:
 - Service logs enqueue outcome.
 - Failures are logged; API workflows remain non-blocking.
 
+### 6.3 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant S as Domain Service
+    participant N as NotificationDispatcherService
+    participant K as KafkaTemplate / Kafka
+    participant C as Consumer Service
+
+    S->>N: dispatch(NotificationEvent)
+    N->>K: send(topic, event)
+    K-->>N: producer ack
+    N-->>S: dispatch accepted
+    C-->>K: consume notification event
+```
+
 ## 7. LLD-6: Persistence and Caching Design
 
 Primary entities and repositories:
@@ -201,6 +346,25 @@ Primary entities and repositories:
 - OTP lockout keys and timeout control.
 - Idempotency cache for payment retries.
 - Rule lookup cache with TTL and eviction on admin updates.
+
+### 7.3 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Admin/User
+    participant S as Service Layer
+    participant R as Repository Layer
+    participant X as Redis
+    participant M as MySQL
+
+    U->>S: request rule / OTP / payment action
+    S->>R: persist or query entity
+    R->>M: JPA read/write
+    M-->>R: entity/result
+    S->>X: cache lookup / update / lock write
+    X-->>S: cache result
+    S-->>U: response + state
+```
 
 ## 8. Configuration and Operational Parameters
 
@@ -265,6 +429,26 @@ Primary frontend files:
 - Frontend development server runs on `http://localhost:3000`.
 - Backend API base URL is `http://localhost:8080`.
 - CORS is configured in backend security to allow the local frontend origin.
+
+### 10.5 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Operator
+    participant UI as React Frontend
+    participant API as Backend API
+    participant SEC as JWTAuthFilter / Security
+    participant DOM as Domain Service
+
+    U->>UI: open dashboard / use tab
+    UI->>API: request endpoint (with token if available)
+    API->>SEC: validate request + token
+    SEC-->>API: authenticated / unauthenticated result
+    API->>DOM: execute backend workflow
+    DOM-->>API: data / status
+    API-->>UI: JSON / headers / error
+    UI-->>U: render state, charts, or access denied overlay
+```
 
 ## 10. Fix and Flow Consolidation Notes
 

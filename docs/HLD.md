@@ -50,6 +50,34 @@ Logical layers:
 - Redis for counters, lockout keys, and cache.
 - Kafka topics for asynchronous event publication.
 
+### 4.1 High-Level Architecture Diagram
+
+```mermaid
+flowchart LR
+    Client[Client Applications / Internal Services]
+    Browser[React Frontend Dashboard]
+    Security[JWTAuthFilter + SecurityConfig]
+    RL[RateLimitFilter]
+    API[Controllers\nAuth / OTP / Payment / Admin]
+    Services[Domain Services\nRateLimitService\nOTPService\nPaymentService\nNotificationDispatcherService]
+    Redis[(Redis)]
+    MySQL[(MySQL)]
+    Kafka[(Kafka)]
+    Metrics[Actuator / Prometheus]
+
+    Client --> Security --> RL --> API --> Services
+    Browser --> API
+    Services --> Redis
+    Services --> MySQL
+    Services --> Kafka
+    Services --> Metrics
+    RL --> Redis
+    Security --> Redis
+```
+
+The diagram above shows the primary request path and the supporting data/messaging layers.
+The React dashboard is part of the same platform and calls the backend APIs for operator workflows.
+
 ## 5. Major Building Blocks
 
 - `RateLimitFilter`: computes caller identity, evaluates quota decision, returns 429 when required.
