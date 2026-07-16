@@ -29,6 +29,8 @@ Digital platforms operating at scale face two compounding problems: unrestricted
 
 **rate-sentinel** solves this by acting as a centralised access-control, client-verification, and payment processing gateway. It enforces who can call what and how often, verifies client identity via multi-channel OTP, processes payments with idempotency guarantees, and reliably dispatches notification events to a Kafka message bus for downstream consumption.
 
+The platform also includes a React-based operator dashboard used to view system status, manage rate-limit rules, test OTP flows, and validate payment/idempotency behavior without relying on backend-only tools.
+
 This document defines the business requirements that govern what the platform must do, why it must do it, and how success is measured — independent of technical implementation.
 
 ---
@@ -63,6 +65,7 @@ Business services need to trigger customer notifications (OTP delivery, payment 
 | Security / Compliance Officer | Audits and governs | PII handling, secrets management, SAST scan results |
 | End Customer | Receives OTP and payment confirmations | Fast OTP delivery, no phantom charges |
 | Customer Support Agent | Resolves disputes | Searchable audit trail to confirm what was sent and when |
+| Platform Operator Dashboard User | Uses the web console | Visual access to rules, OTP, and payment workflows |
 
 ---
 

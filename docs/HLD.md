@@ -61,6 +61,20 @@ Logical layers:
 - `PaymentService`: idempotency guard (Redis + MySQL) and payment lifecycle transitions.
 - `NotificationDispatcherService`: non-blocking event publishing to Kafka topics.
 
+### 5.1 Frontend Dashboard
+
+The React frontend under `frontend/` acts as an operator and test console for the backend APIs.
+It provides a polished single-page experience with a live 3D particle background, glass-style panels,
+and tabbed access to core workflows:
+
+- `Overview` — system summary, live stats, API endpoints, and rate-limit algorithm explanation.
+- `Rate Rules` — admin rule browsing and CRUD interactions.
+- `OTP Tester` — generate and verify OTPs against the backend.
+- `Payments` — create payments with idempotency-key handling.
+
+The UI consumes the backend APIs over `http://localhost:8080` and displays access-denied overlays
+for protected areas when a token or role is missing.
+
 ## 6. Key Runtime Flows
 
 ### 6.1 Request Rate-Limit Enforcement
@@ -88,6 +102,13 @@ Logical layers:
 3. For new key, payment is created and processed.
 4. Payment status transitions to SUCCESS/FAILED and is persisted.
 5. Notification event is emitted asynchronously.
+
+### 6.4 Frontend Interaction Flow
+
+1. User opens the React dashboard in `frontend/`.
+2. Dashboard issues login request to obtain JWT token.
+3. Tabs call the relevant backend endpoints using the token when available.
+4. UI surfaces backend responses, headers, and access-denied states for operator feedback.
 
 ## 7. Data Architecture (High Level)
 

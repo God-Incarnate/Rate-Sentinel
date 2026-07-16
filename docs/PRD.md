@@ -38,6 +38,8 @@
 - **Payment processing** — idempotent transaction handling with MySQL persistence
 - **Notification dispatch** — async Kafka event publishing for downstream delivery
 
+The product also ships with a React operator dashboard for exploring system health, testing OTP and payment flows, and managing rate-limit rules from a browser-based UI.
+
 It publishes all notification events to Kafka topics consumed by **message-relay**.
 
 ---
@@ -72,6 +74,7 @@ It publishes all notification events to Kafka topics consumed by **message-relay
 | US-06 | Security officer | Have all secrets managed in Azure Key Vault | No credentials are exposed in source code or logs |
 | US-07 | Downstream service | Publish a notification intent and forget | I never own vendor logic, retry logic, or delivery state |
 | US-08 | Client application | Know exactly how many requests I have remaining | I can implement smart client-side throttling |
+| US-09 | Platform operator | Use a dashboard to test OTP, payment, and rule-management flows | I can validate the system without crafting raw HTTP calls |
 
 ---
 

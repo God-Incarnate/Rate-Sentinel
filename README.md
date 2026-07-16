@@ -21,6 +21,22 @@ notification dispatch.
 - Redis
 - Kafka
 - Maven
+- React 19 frontend
+- Three.js / React Three Fiber / Drei UI experience
+
+## Frontend Overview
+
+The `frontend/` app is a React-based operator dashboard and API tester for the backend.
+It includes:
+
+- A live 3D particle background and modern glass-style UI
+- Tabbed views for `Overview`, `Rate Rules`, `OTP Tester`, and `Payments`
+- JWT-aware API calls to backend endpoints
+- Admin rule management with access control overlays
+- OTP generation/verification and payment creation flows
+
+The frontend communicates with the backend at `http://localhost:8080` and is configured for
+local development on `http://localhost:3000`.
 
 ## Core Runtime Flow
 
@@ -60,6 +76,14 @@ docker compose up -d
 .\mvnw.cmd spring-boot:run
 ```
 
+Frontend startup:
+
+```powershell
+cd frontend
+npm install
+npm start
+```
+
 ## Test
 
 ```powershell
@@ -79,6 +103,8 @@ Primary endpoints:
 - `DELETE /api/admin/rules/{id}`
 
 Detailed request/response contracts are documented in `docs/API_SPECS.md`.
+
+The frontend dashboard uses these endpoints directly for live testing and operational visibility.
 
 ## Documentation
 

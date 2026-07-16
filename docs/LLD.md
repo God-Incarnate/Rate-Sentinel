@@ -224,6 +224,48 @@ Operational guidance:
 - Endpoint naming conventions are mixed (`/api/v1/payment/createPayment`); standardization recommended.
 - LLD assumes single-region deployment with shared Redis/Kafka.
 
+## 10. Frontend Module Design
+
+Primary frontend files:
+
+- `frontend/src/App.jsx`
+- `frontend/src/App.css`
+- `frontend/src/index.js`
+- `frontend/src/index.css`
+
+### 10.1 UI Composition
+
+- Global styling and design tokens are defined in `App.jsx` and injected at runtime.
+- A Three.js particle field and scanline overlay provide the animated dashboard background.
+- The shell uses tabbed navigation with role-aware access handling.
+
+### 10.2 Frontend Tabs
+
+- `Overview`
+  - Shows system summary, API endpoints, live statistics, and algorithm details.
+  - Reads backend state using the current token when available.
+- `Rate Rules`
+  - Lists configured rate-limit rules and supports admin CRUD workflows.
+  - Uses the admin rules API and reflects cache-eviction driven updates.
+- `OTP Tester`
+  - Calls `/api/v1/otp/generate-otp` and `/api/v1/otp/verify-otp`.
+  - Provides visible success/failure feedback and access-denied overlay handling.
+- `Payments`
+  - Calls payment creation flow with `Idempotency-Key` support.
+  - Surfaces duplicate request behavior and returned payment state.
+
+### 10.3 API Integration Pattern
+
+- Central `api` helper wraps `fetch` calls for POST/GET/PUT/DELETE.
+- JWT token is injected as `Authorization: Bearer ...` when present.
+- JSON and form-encoded requests are both supported to match backend endpoint contracts.
+
+### 10.4 Operational Notes
+
+- Frontend development server runs on `http://localhost:3000`.
+- Backend API base URL is `http://localhost:8080`.
+- CORS is configured in backend security to allow the local frontend origin.
+
 ## 10. Fix and Flow Consolidation Notes
 
 - **Rate limiting correctness:** `SlidingWindowAlgorithm` uses an atomic Lua script for
