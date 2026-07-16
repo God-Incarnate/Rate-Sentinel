@@ -1,0 +1,453 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 4 /Kids [5 0 R 7 0 R 9 0 R 11 0 R] >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 270 >>
+stream
+BT
+/F1 11 Tf
+48 790 Td
+14 TL
+(RATE-SENTINEL LLD WITH DIAGRAMS) Tj
+T*
+(Version: 1.1) Tj
+T*
+(Date: 2026-07-16) Tj
+T*
+T*
+(This document adds module-level design diagrams and key state transitions.) Tj
+T*
+(The detailed written LLD remains available in docs/LLD.md.) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 1323 >>
+stream
+0.8 w
+BT
+/F1 14 Tf
+48 804 Td
+14 TL
+(LLD-OTP Flow) Tj
+T*
+ET
+48 620 150 72 re S
+BT
+/F1 11 Tf
+56 674 Td
+14 TL
+(OTPController) Tj
+T*
+ET
+BT
+/F1 9 Tf
+56 656 Td
+14 TL
+(Generate) Tj
+T*
+(Verify) Tj
+T*
+ET
+222 620 170 72 re S
+BT
+/F1 11 Tf
+230 674 Td
+14 TL
+(OTPService) Tj
+T*
+ET
+BT
+/F1 9 Tf
+230 656 Td
+14 TL
+(SecureRandom) Tj
+T*
+(BCrypt) Tj
+T*
+(lockCheck) Tj
+T*
+ET
+416 620 130 72 re S
+BT
+/F1 11 Tf
+424 674 Td
+14 TL
+(OTPRepository) Tj
+T*
+ET
+BT
+/F1 9 Tf
+424 656 Td
+14 TL
+(OTPRecord) Tj
+T*
+(JPA) Tj
+T*
+ET
+48 510 150 72 re S
+BT
+/F1 11 Tf
+56 564 Td
+14 TL
+(Redis) Tj
+T*
+ET
+BT
+/F1 9 Tf
+56 546 Td
+14 TL
+(otp:lock:{id}) Tj
+T*
+(TTL lockout) Tj
+T*
+ET
+222 510 170 72 re S
+BT
+/F1 11 Tf
+230 564 Td
+14 TL
+(NotificationDispatcher) Tj
+T*
+ET
+BT
+/F1 9 Tf
+230 546 Td
+14 TL
+(build event) Tj
+T*
+(dispatch async) Tj
+T*
+ET
+416 510 130 72 re S
+BT
+/F1 11 Tf
+424 564 Td
+14 TL
+(Kafka) Tj
+T*
+ET
+BT
+/F1 9 Tf
+424 546 Td
+14 TL
+(sms/email/) Tj
+T*
+(whatsapp topic) Tj
+T*
+ET
+198 656 m 222 656 l S
+222 656 m 217 659 l S
+222 656 m 217 653 l S
+392 656 m 416 656 l S
+416 656 m 411 659 l S
+416 656 m 411 653 l S
+307 620 m 307 582 l S
+307 582 m 302 585 l S
+307 582 m 302 579 l S
+481 620 m 481 582 l S
+481 582 m 476 585 l S
+481 582 m 476 579 l S
+222 546 m 198 546 l S
+198 546 m 203 549 l S
+198 546 m 203 543 l S
+392 546 m 416 546 l S
+416 546 m 411 549 l S
+416 546 m 411 543 l S
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 1342 >>
+stream
+0.8 w
+BT
+/F1 14 Tf
+48 804 Td
+14 TL
+(LLD-Payment Idempotency and State) Tj
+T*
+ET
+48 630 150 70 re S
+BT
+/F1 11 Tf
+56 682 Td
+14 TL
+(Input) Tj
+T*
+ET
+BT
+/F1 9 Tf
+56 664 Td
+14 TL
+(Idempotency-Key) Tj
+T*
+(amount, currency) Tj
+T*
+ET
+222 630 160 70 re S
+BT
+/F1 11 Tf
+230 682 Td
+14 TL
+(Redis Check) Tj
+T*
+ET
+BT
+/F1 9 Tf
+230 664 Td
+14 TL
+(payment:idem:{key}) Tj
+T*
+(fast retry path) Tj
+T*
+ET
+406 630 140 70 re S
+BT
+/F1 11 Tf
+414 682 Td
+14 TL
+(MySQL Check) Tj
+T*
+ET
+BT
+/F1 9 Tf
+414 664 Td
+14 TL
+(existsByIdempotencyKey) Tj
+T*
+(durable truth) Tj
+T*
+ET
+48 520 150 70 re S
+BT
+/F1 11 Tf
+56 572 Td
+14 TL
+(PENDING) Tj
+T*
+ET
+BT
+/F1 9 Tf
+56 554 Td
+14 TL
+(create + save) Tj
+T*
+ET
+222 520 160 70 re S
+BT
+/F1 11 Tf
+230 572 Td
+14 TL
+(SUCCESS) Tj
+T*
+ET
+BT
+/F1 9 Tf
+230 554 Td
+14 TL
+(processedAt set) Tj
+T*
+(redis TTL write) Tj
+T*
+ET
+406 520 140 70 re S
+BT
+/F1 11 Tf
+414 572 Td
+14 TL
+(FAILED) Tj
+T*
+ET
+BT
+/F1 9 Tf
+414 554 Td
+14 TL
+(failureReason set) Tj
+T*
+(save) Tj
+T*
+ET
+198 665 m 222 665 l S
+222 665 m 217 668 l S
+222 665 m 217 662 l S
+382 665 m 406 665 l S
+406 665 m 401 668 l S
+406 665 m 401 662 l S
+476 630 m 123 590 l S
+123 590 m 128 593 l S
+123 590 m 128 587 l S
+123 590 m 123 590 l S
+123 590 m 118 593 l S
+123 590 m 118 587 l S
+123 520 m 302 555 l S
+302 555 m 297 558 l S
+302 555 m 297 552 l S
+123 520 m 476 555 l S
+476 555 m 471 558 l S
+476 555 m 471 552 l S
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 1306 >>
+stream
+0.8 w
+BT
+/F1 14 Tf
+48 804 Td
+14 TL
+(LLD-Rule Evaluation Decision Tree) Tj
+T*
+ET
+228 700 140 56 re S
+BT
+/F1 11 Tf
+236 738 Td
+14 TL
+(Start) Tj
+T*
+ET
+BT
+/F1 9 Tf
+236 720 Td
+14 TL
+(clientId + route) Tj
+T*
+ET
+228 620 140 56 re S
+BT
+/F1 11 Tf
+236 658 Td
+14 TL
+(Exact Match?) Tj
+T*
+ET
+BT
+/F1 9 Tf
+236 640 Td
+14 TL
+(clientId + route) Tj
+T*
+ET
+60 540 140 56 re S
+BT
+/F1 11 Tf
+68 578 Td
+14 TL
+(Wildcard Client?) Tj
+T*
+ET
+BT
+/F1 9 Tf
+68 560 Td
+14 TL
+(* + route) Tj
+T*
+ET
+228 540 140 56 re S
+BT
+/F1 11 Tf
+236 578 Td
+14 TL
+(Pattern Match?) Tj
+T*
+ET
+BT
+/F1 9 Tf
+236 560 Td
+14 TL
+(/api/** etc) Tj
+T*
+ET
+396 540 140 56 re S
+BT
+/F1 11 Tf
+404 578 Td
+14 TL
+(Global Default?) Tj
+T*
+ET
+BT
+/F1 9 Tf
+404 560 Td
+14 TL
+(* + *) Tj
+T*
+ET
+228 460 140 56 re S
+BT
+/F1 11 Tf
+236 498 Td
+14 TL
+(Fallback Rule) Tj
+T*
+ET
+BT
+/F1 9 Tf
+236 480 Td
+14 TL
+(properties default) Tj
+T*
+ET
+298 700 m 298 676 l S
+298 676 m 293 679 l S
+298 676 m 293 673 l S
+298 620 m 130 596 l S
+130 596 m 135 599 l S
+130 596 m 135 593 l S
+298 620 m 298 596 l S
+298 596 m 293 599 l S
+298 596 m 293 593 l S
+298 620 m 466 596 l S
+466 596 m 461 599 l S
+466 596 m 461 593 l S
+130 540 m 298 516 l S
+298 516 m 293 519 l S
+298 516 m 293 513 l S
+298 540 m 298 516 l S
+298 516 m 293 519 l S
+298 516 m 293 513 l S
+466 540 m 298 516 l S
+298 516 m 303 519 l S
+298 516 m 303 513 l S
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 10 0 R >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000140 00000 n 
+0000000210 00000 n 
+0000000531 00000 n 
+0000000657 00000 n 
+0000002032 00000 n 
+0000002158 00000 n 
+0000003552 00000 n 
+0000003678 00000 n 
+0000005037 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+5165
+%%EOF
